@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/backgroundcolor">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create new Key Pair"
+            android:id="@+id/btncreatenewkey"
+            android:layout_marginTop="75dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/buttonshape"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Enter Key"
+            android:id="@+id/btnrevieveenter"
+            android:background="@drawable/buttonshape"
+            android:layout_below="@+id/btncreatenewkey"
+            android:layout_alignLeft="@+id/btncreatenewkey"
+            android:layout_alignStart="@+id/btncreatenewkey"
+            android:layout_marginTop="30dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recieve via Bluetooth"
+            android:id="@+id/btnrevievebluetooth"
+            android:background="@drawable/buttonshape"
+            android:layout_below="@+id/btnrevieveenter"
+            android:layout_alignLeft="@+id/btnrevieveenter"
+            android:layout_alignStart="@+id/btnrevieveenter"
+            android:layout_marginTop="30dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recieve via NFC"
+            android:id="@+id/btnrevievenfc"
+            android:background="@drawable/buttonshape"
+            android:layout_below="@+id/btnrevievebluetooth"
+            android:layout_alignLeft="@+id/btnrevievebluetooth"
+            android:layout_alignStart="@+id/btnrevievebluetooth"
+            android:layout_marginTop="30dp" />
+
+
+    </RelativeLayout>
+</LinearLayout>
