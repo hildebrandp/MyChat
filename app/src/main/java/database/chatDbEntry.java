@@ -4,8 +4,8 @@ package database;
 public class chatDbEntry {
     private long id;
     private long CHAT_ID;
-    private long CHAT_SENDER_ID;
-    private long CHAT_RECIEVER_ID;
+    private String CHAT_SENDER_ID;
+    private String CHAT_RECIEVER_ID;
     private String CHAT_MESSAGE;
     private String CHAT_READ;
     private String CHAT_DATE;
@@ -27,19 +27,19 @@ public class chatDbEntry {
         this.CHAT_ID = id;
     }
 
-    public long getCHAT_SENDER_ID() {
+    public String getCHAT_SENDER_ID() {
         return CHAT_SENDER_ID;
     }
 
-    public void setCHAT_SENDER_ID(long CHAT_SENDER_ID) {
+    public void setCHAT_SENDER_ID(String CHAT_SENDER_ID) {
         this.CHAT_SENDER_ID = CHAT_SENDER_ID;
     }
 
-    public long getCHAT_RECIEVER_ID() {
+    public String getCHAT_RECIEVER_ID() {
         return CHAT_RECIEVER_ID;
     }
 
-    public void setCHAT_RECIEVER_ID(long CHAT_RECIEVER_ID) {
+    public void setCHAT_RECIEVER_ID(String CHAT_RECIEVER_ID) {
         this.CHAT_RECIEVER_ID = CHAT_RECIEVER_ID;
     }
 

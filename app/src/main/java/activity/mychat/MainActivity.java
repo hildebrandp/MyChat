@@ -28,7 +28,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -38,15 +37,12 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-
-import crypto.AESHelper;
 import crypto.Crypto;
 import database.SQLiteHelper;
 import database.chatEntryDataSource;
@@ -67,11 +63,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public static String userpasswordhash;
     private String resp;
 
+    public final SQLiteHelper dbHelper = new SQLiteHelper(this);
+    public SQLiteDatabase newDB;
     private String usertableName = SQLiteHelper.TABLE_USER;
     public userEntryDataSource datasourceUser;
     private String chattableName = SQLiteHelper.TABLE_CHAT;
     public chatEntryDataSource datasourceChat;
-    public SQLiteDatabase newDB;
 
     private TextView showusername;
     private ListView chatListView;
@@ -118,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+
         searchuser.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -136,14 +134,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 chatDate.clear();
                 try {
 
-                    String[] name = new String[1];
-                    name[0] = searchuser.getText().toString() + "%";
+                    String name = searchuser.getText().toString() + "%";
 
-                    Cursor c = newDB.rawQuery("SELECT userlist.USER_ID,userlist.USER_NAME,chatlist.CHAT_ID,chatlist.CHAT_DATE " +
-                            "FROM userlist INNER JOIN chatlist " +
+                    String selectSearch = "SELECT userlist.USER_ID,userlist.USER_NAME,chatlist.CHAT_ID,chatlist.CHAT_DATE " +
+                            "FROM userlist LEFT JOIN chatlist " +
                             "ON userlist.USER_ID = chatlist.CHAT_ID " +
-                            "Where userlist.USER_NAME = ? " +
-                            "ORDER BY chatlist.CHAT_DATE DESC ", name);
+                            "WHERE userlist.USER_NAME = " + name +
+                            "ORDER BY chatlist.CHAT_DATE DESC";
+
+                    Cursor c = newDB.rawQuery(selectSearch, null);
 
                     if (c != null ) {
                         if  (c.moveToFirst()) {
@@ -183,10 +182,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             userName.clear();
             chatDate.clear();
 
-            Cursor c = newDB.rawQuery("SELECT user.USER_ID,user.USER_NAME,chat.CHAT_ID,chat.CHAT_DATE " +
-                    "FROM userlist user INNER JOIN chatlist chat " +
-                    "ON user.USER_ID = chat.CHAT_ID ", null);
+            String selectQuery = "SELECT userlist.USER_ID, userlist.USER_NAME, chatlist.CHAT_ID, chatlist.CHAT_DATE " +
+                                 "FROM userlist LEFT JOIN chatlist " +
+                                 "ON USER_ID = CHAT_ID " +
+                                 "ORDER BY chat.CHAT_DATE DESC";
 
+            Cursor c = newDB.rawQuery(selectQuery, null);
 
             //"ON user.USER_ID = chat.CHAT_ID " +
             //"ORDER BY chat.CHAT_DATE DESC ", null);
@@ -255,7 +256,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (!input.getText().toString().equals("")) {
-                    new searchcontact().execute(input.getText().toString());
+                    checkifuserexists(input.getText().toString());
+
                 } else {
                     Toast.makeText(getApplicationContext(), "No empty Username", Toast.LENGTH_LONG).show();
                 }
@@ -281,6 +283,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (doubleBackToExitPressedOnce) {
             //Clean Ram!!!!
 
+            newDB.close();
             super.onBackPressed();
             return;
         }
@@ -366,7 +369,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                 editor.clear();
                 editor.commit();
-
+                editor.putBoolean("login", false);
                 SQLiteHelper.cleanUserTable(newDB);
                 SQLiteHelper.cleanChatTable(newDB);
 
@@ -432,10 +435,31 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         builder.show();
     }
 
+    private void checkifuserexists(String name){
+
+        String query = "SELECT USER_NAME " +
+                        "FROM userlist " +
+                        "WHERE USER_NAME = " + name;
+        Cursor c = newDB.rawQuery(query, null);
+
+        int count = c.getCount();
+        if (count == 0) {
+
+            new searchcontact().execute(name);
+        }else{
+            Toast.makeText(getApplicationContext(), "User already exist", Toast.LENGTH_LONG).show();
+        }
+        c.close();
+    }
+
     @Override
     protected void onResume() {
 
-        new checkPublicKey().execute();
+        if(!user.getBoolean("key",false)){
+            createnewkey();
+        }else{
+            //new checkPublicKey().execute();
+        }
 
         openAndQueryDatabase();
         displayResultList();
@@ -512,7 +536,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", userpasswordhash));
-                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.computeSHAHash(valueIWantToSend1)));
+                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(valueIWantToSend1, userpassword)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -553,20 +577,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     if(splitResult[0].equals("login_false")) {
 
                         Toast.makeText(getApplicationContext(), "Login not Successful", Toast.LENGTH_LONG).show();
+                        openlogin();
 
                     }else if(splitResult[0].equals("login_true")){
 
-                        if(splitResult[1].equals("key_true")) {
+                        if(splitResult[1].equals("revokekey_true")) {
 
                             Toast.makeText(getApplicationContext(), "Revoke Key correct", Toast.LENGTH_LONG).show();
-                            editor.putString("RSA_PUBLIC_KEY", "");
-                            editor.putString("RSA_PRIVATE_KEY", "");
-                            editor.putBoolean("key", false);
-                            editor.commit();
-                            createnewkey();
+
+                            if(splitResult[2].equals("delete_true")) {
+
+                                editor.putString("RSA_PUBLIC_KEY", "");
+                                editor.putString("RSA_PRIVATE_KEY", "");
+                                editor.putBoolean("key", false);
+                                editor.commit();
+                                createnewkey();
+                            }else {
+                                Toast.makeText(getApplicationContext(), "Error Please try again", Toast.LENGTH_LONG).show();
+                            }
+
                         }else{
 
                             Toast.makeText(getApplicationContext(), "Revoke Key false", Toast.LENGTH_LONG).show();
+                            differentkey();
                         }
 
 
@@ -650,20 +683,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         if (!splitResult[1].equals("no_user")) {
 
                             try {
-                                String[] name = new String[1];
-                                name[0] = splitResult[2];
-                                Cursor c = newDB.rawQuery("SELECT * FROM userlist WHERE USER_NAME like ? ", name);
-
-                                int count = c.getCount();
-                                if (count == 0) {
-                                    datasourceUser.createUserEntry(Long.parseLong(splitResult[1]), splitResult[2], splitResult[3]);
-                                    Toast.makeText(getApplicationContext(), "Add new User", Toast.LENGTH_LONG).show();
-
-                                }else{
-                                    Toast.makeText(getApplicationContext(), "User already exist", Toast.LENGTH_LONG).show();
-                                }
-
-                                c.close();
+                                datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
+                                datasourceChat.createChatEntry(user.getString("USER_ID", "0"), splitResult[1], "", "true", "No Messages","true");
+                                Toast.makeText(getApplicationContext(), "Add new User", Toast.LENGTH_LONG).show();
 
                             }finally {
 
@@ -689,6 +711,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         protected Double doInBackground(String... params) {
             // TODO Auto-generated method stub
+
             postData();
             return null;
         }
@@ -707,7 +730,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/testkey.php");
 
             try {
-                String key = MainActivity.user.getString("RSA_PUBLIC_KEY", "");
+
+                String key = user.getString("RSA_PUBLIC_KEY", "");
                 // Add your data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
@@ -751,18 +775,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     String[] splitResult = String.valueOf(resp).split("::");
 
                     if(splitResult[0].equals("login_false")) {
+
                         openlogin();
 
                     }else if(splitResult[0].equals("login_true")){
 
-                            if(splitResult[2].equals("revokekey_false")){
-                                createnewkey();
+                        if(splitResult[1].equals("key_false")) {
 
-                            }else {
-                                if(splitResult[1].equals("key_false")){
-                                    differentkey();
-                                }
-                            }
+                            differentkey();
+
+                        }
 
                     }else {
 

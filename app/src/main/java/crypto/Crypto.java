@@ -1,7 +1,5 @@
 package crypto;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
 import org.spongycastle.util.Arrays;
 import org.spongycastle.util.encoders.Base64;
@@ -22,15 +20,11 @@ import activity.mychat.MainActivity;
 
 public class Crypto {
 
-    public static SharedPreferences mPreferences;
-
     private static String encryptedKey;
-    private static String SHAHash;
-    private static int NO_OPTIONS=0;
 
-    public static void init(Context context) {
-        mPreferences = context.getSharedPreferences("myapplab.securechat", 0);
-    }
+    public static int PW_HASH_ITERATION_COUNT = 2500;
+    private static MessageDigest md;
+
 
     public static void writePublicKeyToPreferences(KeyPair keyPair) {
         StringWriter publicStringWriter = new StringWriter();
@@ -114,42 +108,44 @@ public class Crypto {
         return strippedKey.toString().trim();
     }
 
-    private static String convertToHex(byte[] data) throws java.io.IOException {
+    public static String hashpassword(String password,String username) {
 
 
-        StringBuffer sb = new StringBuffer();
-        String hex=null;
+            try {
+                md = MessageDigest.getInstance("SHA-512");
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+                throw new RuntimeException("No Such Algorithm");
+            }
 
-        hex= android.util.Base64.encodeToString(data, 0, data.length, NO_OPTIONS);
+            String result = hashPw(password, username);
 
-        sb.append(hex);
-
-        return sb.toString();
+            return result;
     }
 
-    public static String computeSHAHash(String password) {
-        MessageDigest mdSha1 = null;
-        try
-        {
-            mdSha1 = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e1) {
-            Log.e("MyChat", "Error initializing SHA1 message digest");
-        }
+
+    private static String hashPw(String pw, String salt) {
+        byte[] bSalt;
+        byte[] bPw;
+
         try {
-            mdSha1.update(password.getBytes("ASCII"));
+            bSalt = salt.getBytes("UTF-8");
+            bPw = pw.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        byte[] data = mdSha1.digest();
-        try {
-            SHAHash=convertToHex(data);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new RuntimeException("Unsupported Encoding", e);
         }
 
-        return SHAHash;
+        byte[] digest = run(bPw, bSalt);
+        for (int i = 0; i < PW_HASH_ITERATION_COUNT - 1; i++) {
+            digest = run(digest, bSalt);
+        }
+
+        return Base64.toBase64String(digest);
+    }
+
+    private static byte[] run(byte[] input, byte[] salt) {
+        md.update(input);
+        return md.digest(salt);
     }
 
 }

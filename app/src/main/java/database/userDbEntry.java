@@ -4,7 +4,7 @@ package database;
 public class userDbEntry {
 
     private long id;
-    private long USER_ID;
+    private String USER_ID;
     private String USER_NAME;
     private String USER_PUBLICKEY;
 
@@ -16,11 +16,11 @@ public class userDbEntry {
         this.id = id;
     }
 
-    public long getUSER_ID() {
+    public String getUSER_ID() {
         return USER_ID;
     }
 
-    public void setUSER_ID(long id) {
+    public void setUSER_ID(String id) {
         this.USER_ID = id;
     }
 

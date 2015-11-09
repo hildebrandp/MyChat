@@ -9,15 +9,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Base64;
-import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.Spinner;
 import android.widget.Toast;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -27,23 +21,14 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.spongycastle.util.io.pem.PemObject;
-import org.spongycastle.util.io.pem.PemWriter;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.security.KeyPair;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import crypto.AESHelper;
 import crypto.Crypto;
 import crypto.RSA;
 import recivekey.Bluetooth;
@@ -57,10 +42,9 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
     private Button recievebluetooth;
     private Button recievenfc;
 
-    private static String decryptedKey;
-    private String revokekey;
     private String resp;
     private String result = "false";
+    private String key;
 
 
     private boolean doubleBackToExitPressedOnce = false;
@@ -159,7 +143,7 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
         AlertDialog.Builder msgBox = new AlertDialog.Builder(this);
 
         msgBox.setTitle("Secure Chat");
-        msgBox.setMessage("If you want to Revoke your Public-Key you need this Key: " + revokekey);
+        msgBox.setMessage("If you want to Revoke your Public-Key you need this Key: " + key);
         msgBox.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
 
@@ -211,9 +195,9 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
             Crypto.writePrivateKeyToPreferences(keyPair);
             Crypto.writePublicKeyToPreferences(keyPair);
 
-            revokekey = random();
+            key = random();
 
-            postData();
+            postData(key);
             return null;
         }
 
@@ -223,7 +207,7 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
         protected void onProgressUpdate(Integer... progress){
         }
 
-        public void postData() {
+        public void postData(String revokekey) {
 
 
             // Create a new HttpClient and Post Header
@@ -232,12 +216,12 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
 
             try {
                 // Add your data
-                String key = MainActivity.user.getString("RSA_PUBLIC_KEY", "");
+                String publickey = MainActivity.user.getString("RSA_PUBLIC_KEY", "");
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", MainActivity.user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", MainActivity.userpasswordhash));
-                nameValuePairs.add(new BasicNameValuePair("userpublickey", key));
-                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.computeSHAHash(revokekey)));
+                nameValuePairs.add(new BasicNameValuePair("userpublickey", publickey));
+                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(revokekey, MainActivity.userpassword)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 

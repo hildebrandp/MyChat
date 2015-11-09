@@ -62,7 +62,7 @@ public class newAccount extends AppCompatActivity{
 
                 if (checkinput()) {
 
-                    new createnewaccount().execute(newUsername.getText().toString(), Crypto.computeSHAHash(newPassword1.getText().toString()));
+                    new createnewaccount().execute(newUsername.getText().toString(), Crypto.hashpassword(newPassword1.getText().toString(), newUsername.getText().toString() ));
                 }
             }
         });

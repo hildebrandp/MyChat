@@ -31,7 +31,7 @@ public class userEntryDataSource {
         userdbHelper.close();
     }
 
-    public userDbEntry createUserEntry(long USER_ID, String USER_NAME,String USER_PUBLICKEY) {
+    public userDbEntry createUserEntry(String USER_ID, String USER_NAME,String USER_PUBLICKEY) {
         ContentValues values = new ContentValues();
         values.put(SQLiteHelper.COLUMN_USERID, USER_ID);
         values.put(SQLiteHelper.COLUMN_USER_NAME, USER_NAME);
@@ -72,7 +72,7 @@ public class userEntryDataSource {
     private userDbEntry cursorToEntry(Cursor cursor) {
         userDbEntry entry = new userDbEntry();
         entry.setId(cursor.getLong(0));
-        entry.setUSER_ID(cursor.getLong(1));
+        entry.setUSER_ID(cursor.getString(1));
         entry.setUSER_NAME(cursor.getString(2));
         entry.setUSER_PUBLICKEY(cursor.getString(3));
         return entry;

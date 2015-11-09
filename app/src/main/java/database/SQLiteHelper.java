@@ -32,8 +32,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     private static final String DATABASE_CREATE_CHAT = "create table "
             + TABLE_CHAT + " ( " +  COLUMN_CHAT_ID
             + " integer primary key, " + COLUMN_CHAT_SENDER_ID
-            + " integer not null, " + COLUMN_CHAT_RECIEVER_ID
-            + " integer not null, " + COLUMN_CHAT_MESSAGE
+            + " text not null, " + COLUMN_CHAT_RECIEVER_ID
+            + " text not null, " + COLUMN_CHAT_MESSAGE
             + " text not null, " + COLUMN_CHAT_READ
             + " text not null, " + COLUMN_CHAT_DATE
             + " text not null, " + COLUMN_CHAT_ISSEND
@@ -42,7 +42,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     private static final String DATABASE_CREATE_USER = "create table "
             + TABLE_USER + " ( " + COLUMN_USER_ID
             + " integer primary key autoincrement, " + COLUMN_USERID
-            + " integer not null, " + COLUMN_USER_NAME
+            + " text not null, " + COLUMN_USER_NAME
             + " text not null, " + COLUMN_USER_PUBLICKEY
             + " text not null);";
 

@@ -69,7 +69,7 @@ public class login extends AppCompatActivity {
         btnlogin = (Button)findViewById(R.id.btnlogin);
         createlogout = (TextView)findViewById(R.id.txtlogout);
 
-        if(!username.getText().toString().equals("") || password.requestFocus()) {
+        if(password.requestFocus() && user.getBoolean("login",false)) {
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         }
 
@@ -84,7 +84,7 @@ public class login extends AppCompatActivity {
 
                 if(checkinput()){
                     try {
-                        new acclogin().execute(username.getText().toString(), Crypto.computeSHAHash(password.getText().toString()));
+                        new acclogin().execute(username.getText().toString(), Crypto.hashpassword(password.getText().toString(), username.getText().toString()));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -125,7 +125,7 @@ public class login extends AppCompatActivity {
 
         Intent mIntent = new Intent(this, MainActivity.class);
         mIntent.putExtra("userpassword", pass);
-        mIntent.putExtra("userpasswordhash", Crypto.computeSHAHash(pass));
+        mIntent.putExtra("userpasswordhash", Crypto.hashpassword(password.getText().toString(), username.getText().toString()));
         startActivity(mIntent);
         finish();
     }
