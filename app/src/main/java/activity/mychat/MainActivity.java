@@ -115,6 +115,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        //Fehler finden warum datenbank nicht existiert
+        //datasourceUser.createUserEntry("1", "Name", "KEY");
+        //datasourceChat.createChatEntry(user.getString("USER_ID", "0"), "1", "Hallo", "true", "No Messages","true");
+
 
         searchuser.addTextChangedListener(new TextWatcher() {
             @Override
