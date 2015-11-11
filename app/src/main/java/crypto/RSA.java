@@ -15,19 +15,13 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.RSAKeyGenParameterSpec;
 import javax.crypto.Cipher;
-import activity.mychat.MainActivity;
+import activity.mychat.Main_activity;
 
 
 public class RSA {
 
-    private static String encryptedKey;
     private static String decryptedKey;
 
-    public static SharedPreferences mPreferences;
-
-    public static void init(Context context) {
-        mPreferences = context.getSharedPreferences("myapplab.securechat", 0);
-    }
 
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
@@ -93,7 +87,7 @@ public class RSA {
     }
 
     public static String encryptWithStoredKey(String text) {
-        String strippedKey = Crypto.stripPublicKeyHeaders(mPreferences.getString("RSA_PUBLIC_KEY", null));
+        String strippedKey = Crypto.stripPublicKeyHeaders(Main_activity.user.getString("RSA_PUBLIC_KEY", null));
         return encryptWithKey(strippedKey, text);
     }
 
@@ -101,7 +95,7 @@ public class RSA {
         try {
 
             try {
-                decryptedKey = AESHelper.decrypt(MainActivity.userpassword, mPreferences.getString("RSA_PRIVATE_KEY", null));
+                decryptedKey = AESHelper.decrypt(Main_activity.userpassword, Main_activity.user.getString("RSA_PRIVATE_KEY", null));
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -27,7 +27,7 @@ public class AESHelper {
         KeyGenerator kgen = KeyGenerator.getInstance("AES");
         SecureRandom sr = SecureRandom.getInstance("SHA1PRNG","Crypto");
         sr.setSeed(seed);
-        kgen.init(128, sr); // 192 and 256 bits may not be available
+        kgen.init(256, sr); // 192 and 256 bits may not be available
         SecretKey skey = kgen.generateKey();
         byte[] raw = skey.getEncoded();
         return raw;
@@ -53,6 +53,7 @@ public class AESHelper {
     public static String toHex(String txt) {
         return toHex(txt.getBytes());
     }
+
     public static String fromHex(String hex) {
         return new String(toByte(hex));
     }

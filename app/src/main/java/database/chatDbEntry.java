@@ -74,4 +74,5 @@ public class chatDbEntry {
     public void setCHAT_ISSEND(String CHAT_ISSEND) {
         this.CHAT_ISSEND = CHAT_ISSEND;
     }
+
 }

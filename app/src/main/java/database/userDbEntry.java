@@ -3,18 +3,9 @@ package database;
 //Class for DB Entry
 public class userDbEntry {
 
-    private long id;
     private String USER_ID;
     private String USER_NAME;
     private String USER_PUBLICKEY;
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getUSER_ID() {
         return USER_ID;

@@ -35,7 +35,7 @@ import recivekey.Bluetooth;
 import recivekey.NFC;
 import recivekey.enterkey;
 
-public class newKey extends AppCompatActivity implements View.OnClickListener{
+public class NewKey_activity extends AppCompatActivity implements View.OnClickListener{
 
     private Button createkey;
     private Button enterKey;
@@ -75,7 +75,7 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
 
                 if(result.equals("true")){
 
-                    MainActivity.editor.putBoolean("key", true);
+                    Main_activity.editor.putBoolean("key", true);
                     result = "true";
                     Intent returnIntent = new Intent();
                     returnIntent.putExtra("result", result);
@@ -151,7 +151,7 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
                 Intent returnIntent = new Intent();
                 returnIntent.putExtra("result", result);
                 setResult(RESULT_OK, returnIntent);
-                newKey.this.finish();
+                NewKey_activity.this.finish();
             }
         });
 
@@ -216,12 +216,12 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
 
             try {
                 // Add your data
-                String publickey = MainActivity.user.getString("RSA_PUBLIC_KEY", "");
+                String publickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-                nameValuePairs.add(new BasicNameValuePair("username", MainActivity.user.getString("USER_NAME", "")));
-                nameValuePairs.add(new BasicNameValuePair("userpassword", MainActivity.userpasswordhash));
+                nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.userpasswordhash));
                 nameValuePairs.add(new BasicNameValuePair("userpublickey", publickey));
-                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(revokekey, MainActivity.userpassword)));
+                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(revokekey, Main_activity.userpassword)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -267,7 +267,7 @@ public class newKey extends AppCompatActivity implements View.OnClickListener{
 
                             Toast.makeText(getApplicationContext(), "Key update successful", Toast.LENGTH_LONG).show();
 
-                            MainActivity.editor.putBoolean("key", true).commit();
+                            Main_activity.editor.putBoolean("key", true).commit();
 
                             revokekeywindow();
                         }else{

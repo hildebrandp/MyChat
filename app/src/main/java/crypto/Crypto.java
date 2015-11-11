@@ -16,7 +16,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import activity.mychat.MainActivity;
+import activity.mychat.Main_activity;
 
 public class Crypto {
 
@@ -35,7 +35,7 @@ public class Crypto {
             pemWriter.flush();
             pemWriter.close();
 
-            MainActivity.user.edit().putString("RSA_PUBLIC_KEY", publicStringWriter.toString()).commit();
+            Main_activity.user.edit().putString("RSA_PUBLIC_KEY", publicStringWriter.toString()).commit();
 
         } catch (IOException e) {
             Log.e("RSA", e.getMessage());
@@ -52,13 +52,13 @@ public class Crypto {
             pemWriter.close();
 
             try {
-                encryptedKey = AESHelper.encrypt(MainActivity.userpassword, privateStringWriter.toString());
+                encryptedKey = AESHelper.encrypt(Main_activity.userpassword, privateStringWriter.toString());
                 privateStringWriter = null;
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            MainActivity.user.edit().putString("RSA_PRIVATE_KEY", encryptedKey).commit();
+            Main_activity.user.edit().putString("RSA_PRIVATE_KEY", encryptedKey).commit();
             encryptedKey = "";
 
         } catch (IOException e) {
@@ -109,7 +109,6 @@ public class Crypto {
     }
 
     public static String hashpassword(String password,String username) {
-
 
             try {
                 md = MessageDigest.getInstance("SHA-512");

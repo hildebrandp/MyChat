@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
 
-        <activity android:name=".login" >
+        <activity android:name=".Login_activity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -24,17 +24,17 @@
         </activity>
 
         <activity
-            android:name=".newAccount"
+            android:name=".NewAccount_activity"
             android:theme="@style/AppTheme">
         </activity>
 
         <activity
-            android:name=".MainActivity"
+            android:name=".Main_activity"
             android:theme="@style/AppTheme.NoActionBar">
         </activity>
 
         <activity
-            android:name=".newKey"
+            android:name=".NewKey_activity"
             android:theme="@style/AppTheme.NoActionBar">
         </activity>
 
@@ -50,6 +50,11 @@
 
         <activity
             android:name="recivekey.NFC"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+
+        <activity
+            android:name=".Chat_activity"
             android:theme="@style/AppTheme.NoActionBar">
         </activity>
 

@@ -16,7 +16,7 @@ public class chatEntryDataSource {
     private SQLiteDatabase chatdatabase;
     private SQLiteHelper chatdbHelper;
 
-    private String[] allColumnsChat = { SQLiteHelper.COLUMN_CHAT_ID,
+    private String[] allColumnsChat = { SQLiteHelper.COLUMN_CHATID, SQLiteHelper.COLUMN_CHAT_ID,
             SQLiteHelper.COLUMN_CHAT_SENDER_ID, SQLiteHelper.COLUMN_CHAT_RECIEVER_ID, SQLiteHelper.COLUMN_CHAT_MESSAGE,
             SQLiteHelper.COLUMN_CHAT_READ, SQLiteHelper.COLUMN_CHAT_DATE, SQLiteHelper.COLUMN_CHAT_ISSEND};
 
@@ -32,8 +32,9 @@ public class chatEntryDataSource {
         chatdbHelper.close();
     }
 
-    public chatDbEntry createChatEntry(String CHAT_SENDER_ID,String CHAT_RECIEVER_ID,String CHAT_MESSAGE, String CHAT_READ, String CHAT_DATE, String CHAT_ISSEND) {
+    public chatDbEntry createChatEntry(Long CHAT_ID,String CHAT_SENDER_ID,String CHAT_RECIEVER_ID,String CHAT_MESSAGE, String CHAT_READ, String CHAT_DATE, String CHAT_ISSEND) {
         ContentValues values = new ContentValues();
+        values.put(SQLiteHelper.COLUMN_CHAT_ID, CHAT_ID);
         values.put(SQLiteHelper.COLUMN_CHAT_SENDER_ID, CHAT_SENDER_ID);
         values.put(SQLiteHelper.COLUMN_CHAT_RECIEVER_ID, CHAT_RECIEVER_ID);
         values.put(SQLiteHelper.COLUMN_CHAT_MESSAGE, CHAT_MESSAGE);
@@ -42,7 +43,7 @@ public class chatEntryDataSource {
         values.put(SQLiteHelper.COLUMN_CHAT_ISSEND, CHAT_ISSEND);
 
         long insertId = chatdatabase.insert(SQLiteHelper.TABLE_CHAT, null, values);
-        Cursor cursor = chatdatabase.query(SQLiteHelper.TABLE_CHAT, allColumnsChat,SQLiteHelper.COLUMN_CHAT_ID + " = " + insertId, null, null, null, null, null);
+        Cursor cursor = chatdatabase.query(SQLiteHelper.TABLE_CHAT, allColumnsChat,SQLiteHelper.COLUMN_CHATID + " = " + insertId, null, null, null, null, null);
         cursor.moveToFirst();
         chatDbEntry newDbEntry = cursorToEntry(cursor);
         cursor.close();
@@ -50,25 +51,8 @@ public class chatEntryDataSource {
     }
 
     public void deleteEntry(chatDbEntry id) {
-        chatdatabase.delete(SQLiteHelper.TABLE_CHAT, SQLiteHelper.COLUMN_CHAT_ID
+        chatdatabase.delete(SQLiteHelper.TABLE_CHAT, SQLiteHelper.COLUMN_CHATID
                 + " = " + id, null);
-    }
-
-    public List<chatDbEntry> getAllChatEntries() {
-        List<chatDbEntry> entries = new ArrayList<chatDbEntry>();
-
-        Cursor cursor = chatdatabase.query(SQLiteHelper.TABLE_CHAT,
-                allColumnsChat, null, null, null, null, null, null);
-
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            chatDbEntry entry = cursorToEntry(cursor);
-            entries.add(entry);
-            cursor.moveToNext();
-        }
-        // make sure to close the cursor
-        cursor.close();
-        return entries;
     }
 
     private chatDbEntry cursorToEntry(Cursor cursor) {

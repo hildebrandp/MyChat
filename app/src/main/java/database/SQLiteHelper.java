@@ -10,6 +10,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
 
     public static final String TABLE_CHAT = "chatlist";
+    public static final String COLUMN_CHATID = "CHATID";
     public static final String COLUMN_CHAT_ID = "CHAT_ID";
     public static final String COLUMN_CHAT_SENDER_ID = "CHAT_SENDER_ID";
     public static final String COLUMN_CHAT_RECIEVER_ID = "CHAT_RECIEVER_ID";
@@ -19,8 +20,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CHAT_ISSEND = "CHAT_ISSEND";
 
     public static final String TABLE_USER = "userlist";
-    public static final String COLUMN_USER_ID = "USERID";
-    public static final String COLUMN_USERID = "USER_ID";
+    public static final String COLUMN_USER_ID = "USER_ID";
     public static final String COLUMN_USER_NAME = "USER_NAME";
     public static final String COLUMN_USER_PUBLICKEY = "USER_PUBLICKEY";
 
@@ -30,8 +30,9 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     // Database creation sql statement
     private static final String DATABASE_CREATE_CHAT = "create table "
-            + TABLE_CHAT + " ( " +  COLUMN_CHAT_ID
-            + " integer primary key, " + COLUMN_CHAT_SENDER_ID
+            + TABLE_CHAT + " ( " +  COLUMN_CHATID
+            + " integer primary key autoincrement, " + COLUMN_CHAT_SENDER_ID
+            + " text not null, " + COLUMN_CHAT_ID
             + " text not null, " + COLUMN_CHAT_RECIEVER_ID
             + " text not null, " + COLUMN_CHAT_MESSAGE
             + " text not null, " + COLUMN_CHAT_READ
@@ -41,8 +42,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_CREATE_USER = "create table "
             + TABLE_USER + " ( " + COLUMN_USER_ID
-            + " integer primary key autoincrement, " + COLUMN_USERID
-            + " text not null, " + COLUMN_USER_NAME
+            + " text primary key, " + COLUMN_USER_NAME
             + " text not null, " + COLUMN_USER_PUBLICKEY
             + " text not null);";
 
@@ -60,12 +60,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         database.execSQL(DATABASE_CREATE_USER);
     }
 
-    public static void cleanChatTable(SQLiteDatabase database){
+    public static void cleanTable(SQLiteDatabase database){
         database.execSQL("DROP TABLE IF EXISTS " + TABLE_CHAT);
-        create(database);
-    }
-
-    public static void cleanUserTable(SQLiteDatabase database){
         database.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
         create(database);
     }
