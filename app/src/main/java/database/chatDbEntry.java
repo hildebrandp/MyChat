@@ -10,6 +10,7 @@ public class chatDbEntry {
     private String CHAT_READ;
     private String CHAT_DATE;
     private String CHAT_ISSEND;
+    private String CHAT_AESKEY;
 
     public long getId() {
         return id;
@@ -73,6 +74,14 @@ public class chatDbEntry {
 
     public void setCHAT_ISSEND(String CHAT_ISSEND) {
         this.CHAT_ISSEND = CHAT_ISSEND;
+    }
+
+    public String getCHAT_AESKEY() {
+        return CHAT_AESKEY;
+    }
+
+    public void setCHAT_AESKEY(String CHAT_AESKEY) {
+        this.CHAT_AESKEY = CHAT_AESKEY;
     }
 
 }

@@ -18,6 +18,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CHAT_READ = "CHAT_READ";
     public static final String COLUMN_CHAT_DATE = "CHAT_DATE";
     public static final String COLUMN_CHAT_ISSEND = "CHAT_ISSEND";
+    public static final String COLUMN_CHAT_AESKEY = "CHAT_AESKEY";
 
     public static final String TABLE_USER = "userlist";
     public static final String COLUMN_USER_ID = "USER_ID";
@@ -35,16 +36,17 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + " text not null, " + COLUMN_CHAT_ID
             + " text not null, " + COLUMN_CHAT_RECIEVER_ID
             + " text not null, " + COLUMN_CHAT_MESSAGE
-            + " text not null, " + COLUMN_CHAT_READ
+            + " VARCHAR(4096), " + COLUMN_CHAT_READ
             + " text not null, " + COLUMN_CHAT_DATE
-            + " text not null, " + COLUMN_CHAT_ISSEND
+            + " text not null, " + COLUMN_CHAT_AESKEY
+            + " VARCHAR(256),  " + COLUMN_CHAT_ISSEND
             + " text not null);";
 
     private static final String DATABASE_CREATE_USER = "create table "
             + TABLE_USER + " ( " + COLUMN_USER_ID
             + " text primary key, " + COLUMN_USER_NAME
-            + " text not null, " + COLUMN_USER_PUBLICKEY
-            + " text not null);";
+            + " VARCHAR(40), " + COLUMN_USER_PUBLICKEY
+            + " VARCHAR(2048));";
 
     public SQLiteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

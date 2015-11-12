@@ -100,12 +100,12 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
         switch(v.getId()) {
             case R.id.btncreatenewkey:
 
-                createkey.setClickable(false);
-                enterKey.setClickable(false);
-                recievebluetooth.setClickable(false);
-                recievenfc.setClickable(false);
+                    createkey.setClickable(false);
+                    enterKey.setClickable(false);
+                    recievebluetooth.setClickable(false);
+                    recievenfc.setClickable(false);
 
-                new createKey().execute();
+                    new createKey().execute();
 
                 break;
             case R.id.btnrevieveenter:
@@ -216,10 +216,11 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
 
             try {
                 // Add your data
-                String publickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
+                String tmppublickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
+                String publickey = Crypto.stripPublicKeyHeaders(tmppublickey);
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
-                nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.userpasswordhash));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.user.getString("USER_PASSWORD", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpublickey", publickey));
                 nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(revokekey, Main_activity.userpassword)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
@@ -268,6 +269,7 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
                             Toast.makeText(getApplicationContext(), "Key update successful", Toast.LENGTH_LONG).show();
 
                             Main_activity.editor.putBoolean("key", true).commit();
+                            Main_activity.editor.putBoolean("haskey", true).commit();
 
                             revokekeywindow();
                         }else{

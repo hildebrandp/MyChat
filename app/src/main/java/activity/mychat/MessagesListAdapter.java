@@ -50,7 +50,7 @@ public class MessagesListAdapter extends BaseAdapter {
         LayoutInflater mInflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
 
         // Identifying the message owner
-        if (!messagesItems.get(position).getsenderID().equals(Main_activity.user.getString("USER_ID","0"))) {
+        if (messagesItems.get(position).getsenderID().equals(Main_activity.user.getString("USER_ID","0"))) {
 
             convertView = mInflater.inflate(R.layout.list_item_message_right, null);
         }else{

@@ -8,14 +8,22 @@ import org.spongycastle.util.io.pem.PemWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 import activity.mychat.Main_activity;
 
 public class Crypto {
@@ -24,6 +32,14 @@ public class Crypto {
 
     public static int PW_HASH_ITERATION_COUNT = 2500;
     private static MessageDigest md;
+
+    KeyPairGenerator kpg;
+    KeyPair kp;
+    PublicKey publicKey;
+    PrivateKey privateKey;
+    byte [] encryptedBytes,decryptedBytes;
+    Cipher cipher,cipher1;
+    String encrypted,decrypted;
 
 
     public static void writePublicKeyToPreferences(KeyPair keyPair) {
@@ -35,7 +51,7 @@ public class Crypto {
             pemWriter.flush();
             pemWriter.close();
 
-            Main_activity.user.edit().putString("RSA_PUBLIC_KEY", publicStringWriter.toString()).commit();
+            Main_activity.user.edit().putString("RSA_PUBLIC_KEY", publicStringWriter.toString() ).commit();
 
         } catch (IOException e) {
             Log.e("RSA", e.getMessage());
@@ -121,7 +137,6 @@ public class Crypto {
 
             return result;
     }
-
 
     private static String hashPw(String pw, String salt) {
         byte[] bSalt;

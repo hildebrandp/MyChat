@@ -120,7 +120,6 @@ public class Login_activity extends AppCompatActivity {
 
         Intent mIntent = new Intent(this, Main_activity.class);
         mIntent.putExtra("userpassword", pass);
-        mIntent.putExtra("userpasswordhash", Crypto.hashpassword(password.getText().toString(), username.getText().toString()));
         startActivity(mIntent);
         finish();
     }
@@ -240,6 +239,7 @@ public class Login_activity extends AppCompatActivity {
 
                         editor.putString("USER_ID", splitResult[1]);
                         editor.putString("USER_NAME", splitResult[2]);
+                        editor.putString("USER_PASSWORD", Crypto.hashpassword(password.getText().toString(), username.getText().toString()));
                         editor.putBoolean("login", true);
                         editor.commit();
 

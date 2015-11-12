@@ -191,6 +191,7 @@ public class NewAccount_activity extends AppCompatActivity{
 
                         Login_activity.editor.putString("USER_ID", splitResult[1]);
                         Login_activity.editor.putString("USER_NAME", newUsername.getText().toString());
+                        Login_activity.editor.putString("USER_PASSWORD", Crypto.hashpassword(newPassword1.getText().toString(), newUsername.getText().toString()));
                         Login_activity.editor.putString("RSA_PUBLIC_KEY", "");
                         Login_activity.editor.putString("RSA_PRIVATE_KEY", "");
                         Login_activity.editor.putBoolean("login", true);

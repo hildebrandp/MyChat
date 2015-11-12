@@ -20,17 +20,17 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Large Text"
             android:id="@+id/txtMsg"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
             android:textSize="16dp"
-            android:layout_marginRight="80dp"
             android:textColor="#000000"
-            android:paddingLeft="10dp"
+            android:layout_marginLeft="100dp"
             android:paddingRight="10dp"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:background="@drawable/bg_msg_you"/>
+            android:minWidth="500dp"
+            android:background="@drawable/bg_msg_you"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -39,9 +39,8 @@
             android:text="Date"
             android:id="@+id/txtDate"
             android:layout_below="@+id/txtMsg"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_marginRight="10dp"/>
+            android:layout_alignLeft="@+id/txtMsg"
+            android:layout_alignStart="@+id/txtMsg" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -50,8 +49,7 @@
             android:text="Verify"
             android:id="@+id/txtVerified"
             android:layout_below="@+id/txtMsg"
-            android:layout_toRightOf="@+id/txtDate"
-            android:layout_toEndOf="@+id/txtDate" />
+            android:layout_alignRight="@+id/txtMsg"/>
 
     </RelativeLayout>
 </LinearLayout>

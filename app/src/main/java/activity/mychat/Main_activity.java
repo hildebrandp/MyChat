@@ -1,7 +1,9 @@
 package activity.mychat;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -62,7 +64,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     ActionBarDrawerToggle drawerToggle;
 
     public static String userpassword;
-    public static String userpasswordhash;
     private String resp;
 
     public final SQLiteHelper dbHelper = new SQLiteHelper(this);
@@ -88,7 +89,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         user = getSharedPreferences("myapplab.securechat", MODE_PRIVATE);
         editor = user.edit();
         userpassword = getIntent().getExtras().getString("userpassword");
-        userpasswordhash = getIntent().getExtras().getString("userpasswordhash");
 
         SQLiteHelper dbHelper = new SQLiteHelper(this);
         newDB = dbHelper.getWritableDatabase();
@@ -197,10 +197,15 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             userName.clear();
             chatDate.clear();
 
-            String selectQuery = "SELECT userlist.USER_ID, userlist.USER_NAME, chatlist.CHAT_ID, chatlist.CHAT_DATE " +
-                                 "FROM userlist LEFT JOIN chatlist " +
-                                 "ON USER_ID = CHAT_ID " +
-                                 "ORDER BY chatlist.CHAT_DATE DESC";
+            //String selectQuery = "SELECT userlist.USER_ID, userlist.USER_NAME, chatlist.CHAT_ID, chatlist.CHAT_DATE " +
+            //                     "FROM userlist INNER JOIN chatlist " +
+            //                     "ON USER_ID = CHAT_ID " +
+            //                     "ORDER BY chatlist.CHAT_DATE DESC";
+
+            String selectQuery = "SELECT USER_ID,USER_NAME " +
+                                 "FROM userlist " +
+                                 "ORDER BY USER_NAME DESC";
+
 
             Cursor c = newDB.rawQuery(selectQuery, null);
 
@@ -209,9 +214,21 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             if (c != null ) {
                 if  (c.moveToFirst()) {
                     do {
+
+                        String[] data = new String[1];
+                        data[0] = Long.toString(c.getLong(c.getColumnIndex("USER_ID")));
+
+                        String selectchat = "SELECT CHAT_DATE,CHAT_ID " +
+                                "FROM chatlist " +
+                                "WHERE CHAT_ID = ? " +
+                                "ORDER BY CHAT_DATE DESC LIMIT 1";
+
+                        Cursor c2 = newDB.rawQuery(selectchat, data);
+                        c2.moveToFirst();
+
                         Long tmpid = c.getLong(c.getColumnIndex("USER_ID"));
                         String tmpname  = c.getString(c.getColumnIndex("USER_NAME"));
-                        String tmpdate = c.getString(c.getColumnIndex("CHAT_DATE"));
+                        String tmpdate = c2.getString(c2.getColumnIndex("CHAT_DATE"));
 
                             if(tmpdate.equals("0")){
                                 chatDate.add("No Messages");
@@ -303,11 +320,13 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     private void openChat(int position){
 
         Long userid = userID.get(position);
+        String username = userName.get(position);
 
         Intent intent = new Intent(this, Chat_activity.class);
         Bundle b = new Bundle();
-        b.putLong("userid", userid); //Your id
-        intent.putExtras(b); //Put your id to your next Intent
+        b.putLong("userid", userid);
+        b.putString("username", username);
+        intent.putExtras(b);
         startActivity(intent);
     }
 
@@ -454,7 +473,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 new revokekey().execute(input.getText().toString());
             }
         });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+        builder.setNegativeButton("Logout", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 editor.clear();
@@ -498,10 +518,30 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             new checkPublicKey().execute();
         }
 
+        if(!user.getBoolean("haskey",false)){
+            differentkey();
+        }
+
+        if(isMyServiceRunning(Background_Service.class.getName())){
+            Log.d("Service: ", "active" );
+        } else {
+            startService(new Intent(getBaseContext(), Background_Service.class));
+        }
+
         openAndQueryDatabase();
         displayResultList();
 
         super.onResume();
+    }
+
+    private boolean isMyServiceRunning(String className) {
+        ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (className.equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -572,7 +612,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 // Add your data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
-                nameValuePairs.add(new BasicNameValuePair("userpassword", userpasswordhash));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
                 nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(valueIWantToSend1, userpassword)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -677,7 +717,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 // Add your data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME","")));
-                nameValuePairs.add(new BasicNameValuePair("userpassword", userpasswordhash));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
                 nameValuePairs.add(new BasicNameValuePair("usercontact", valueIWantToSend1));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -721,7 +761,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                             try {
                                 datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
-                                datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), user.getString("USER_ID", "0"), splitResult[1], "", "true", "0","true");
+                                datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), user.getString("USER_ID", "0"), splitResult[1], "", "true", "0", "true","");
                                 Toast.makeText(getApplicationContext(), "Add new User", Toast.LENGTH_LONG).show();
 
                             }finally {
@@ -772,12 +812,13 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
             try {
 
-                String key = user.getString("RSA_PUBLIC_KEY", "");
+                String tmppublickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
+                String publickey = Crypto.stripPublicKeyHeaders(tmppublickey);
                 // Add your data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
-                nameValuePairs.add(new BasicNameValuePair("userpassword", userpasswordhash));
-                nameValuePairs.add(new BasicNameValuePair("userkey", key));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
+                nameValuePairs.add(new BasicNameValuePair("userkey", publickey));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -823,6 +864,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                         if(splitResult[1].equals("key_false")){
 
+                            editor.putBoolean("haskey",false).commit();
                             differentkey();
                         }
 

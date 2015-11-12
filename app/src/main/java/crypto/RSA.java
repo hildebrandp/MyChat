@@ -36,7 +36,7 @@ public class RSA {
         try {
             SecureRandom random = new SecureRandom();
             RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(KEY_SIZE, RSAKeyGenParameterSpec.F4);
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "SC");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
             generator.initialize(spec, random);
             return generator.generateKeyPair();
         } catch (Exception e) {
@@ -47,7 +47,7 @@ public class RSA {
 
     public static byte[] encrypt(Key publicKey, byte[] toBeCiphred) {
         try {
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
+            Cipher rsaCipher = Cipher.getInstance("RSA");
             rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
             return rsaCipher.doFinal(toBeCiphred);
         } catch (Exception e) {
@@ -63,7 +63,7 @@ public class RSA {
 
     public static byte[] decrypt(Key privateKey, byte[] encryptedText) {
         try {
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
+            Cipher rsaCipher = Cipher.getInstance("RSA");
             rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
             return rsaCipher.doFinal(encryptedText);
         } catch (Exception e) {
@@ -105,42 +105,6 @@ public class RSA {
             return decryptFromBase64(privateKey, text);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static class FixedRand extends SecureRandom {
-
-        MessageDigest sha;
-        byte[] state;
-
-        FixedRand() {
-            try {
-                this.sha = MessageDigest.getInstance("SHA-1");
-                this.state = sha.digest();
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("can't find SHA-1!");
-            }
-        }
-
-        public void nextBytes(byte[] bytes) {
-
-            int off = 0;
-
-            sha.update(state);
-
-            while (off < bytes.length) {
-                state = sha.digest();
-
-                if (bytes.length - off > state.length) {
-                    System.arraycopy(state, 0, bytes, off, state.length);
-                } else {
-                    System.arraycopy(state, 0, bytes, off, bytes.length - off);
-                }
-
-                off += state.length;
-
-                sha.update(state);
-            }
         }
     }
 
