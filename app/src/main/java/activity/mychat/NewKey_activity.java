@@ -216,8 +216,7 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
 
             try {
                 // Add your data
-                String tmppublickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
-                String publickey = Crypto.stripPublicKeyHeaders(tmppublickey);
+                String publickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.user.getString("USER_PASSWORD", "")));

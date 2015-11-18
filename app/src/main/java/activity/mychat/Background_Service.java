@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -55,9 +56,12 @@ public class Background_Service extends Service {
     public static chatEntryDataSource datasourceChat;
     public static userEntryDataSource datasourceUser;
 
+    public static final String NOTIFICATION = "NEW_MESSAGE";
+    private final IBinder mBinder = new MyBinder();
+
     @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+    public IBinder onBind(Intent arg0) {
+        return mBinder;
     }
 
     @Override
@@ -70,26 +74,19 @@ public class Background_Service extends Service {
         newDB = dbHelper.getWritableDatabase();
 
         Toast.makeText(this, "Service Gestartet", Toast.LENGTH_LONG).show();
+
+
         datasourceChat = new chatEntryDataSource(this);
         datasourceChat.open();
         datasourceUser = new userEntryDataSource(this);
         datasourceUser.open();
 
-
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        //Timer initialize
-        if(mTimer1 != null) {
-            mTimer1.cancel();
-            mTimer1 = new Timer();
-        } else {
-            // recreate new
-            mTimer1 = new Timer();
-        }
 
-        mTimer1.scheduleAtFixedRate(new readmessages(), 1000, 60000);
+        startTimer(10000);
 
         return START_STICKY;
     }
@@ -111,6 +108,25 @@ public class Background_Service extends Service {
         }
     }
 
+    public void startTimer(int time){
+        //Timer initialize
+        if(mTimer1 != null) {
+            mTimer1.cancel();
+            mTimer1 = new Timer();
+        } else {
+            // recreate new
+            mTimer1 = new Timer();
+        }
+
+        mTimer1.scheduleAtFixedRate(new readmessages(), 1000, time);
+    }
+
+    public class MyBinder extends Binder {
+        Background_Service getService() {
+            return Background_Service.this;
+        }
+    }
+
     protected void displayNotification() {
         Intent intent = new Intent(getApplicationContext(), Login_activity.class);
 
@@ -128,6 +144,12 @@ public class Background_Service extends Service {
 
         mNotificationManager.notify(0, mBuilder.build());
 
+    }
+
+    private void publishResults(String result) {
+        Intent intent = new Intent(NOTIFICATION);
+        intent.putExtra("RESULT", result);
+        sendBroadcast(intent);
     }
 
     @Override
@@ -219,7 +241,7 @@ public class Background_Service extends Service {
 
                             String[] splitmessage = String.valueOf(splitResult2[2]).split("---Message-Break---");
 
-                            datasourceChat.createChatEntry(sender, splitResult2[0], reciever, splitmessage[1] , "false", splitResult2[1], "true", splitmessage[2]);
+                            datasourceChat.createChatEntry(sender, splitResult2[0], reciever, splitmessage[0] , "false", splitResult2[1], "true", splitmessage[1]);
 
                             String[] data = new String[1];
                             data[0] = splitResult2[0];
@@ -236,6 +258,7 @@ public class Background_Service extends Service {
                                 new addcontact().execute(data[0]);
                             }
                             c.close();
+                            publishResults(splitResult2[0]);
 
                         }
 

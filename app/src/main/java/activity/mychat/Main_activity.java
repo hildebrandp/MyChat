@@ -518,8 +518,9 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             new checkPublicKey().execute();
         }
 
+        //fehler kommt von hier
         if(!user.getBoolean("haskey",false)){
-            differentkey();
+            //differentkey();
         }
 
         if(isMyServiceRunning(Background_Service.class.getName())){
@@ -760,8 +761,10 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                         if (!splitResult[1].equals("no_user")) {
 
                             try {
-                                datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
-                                datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), user.getString("USER_ID", "0"), splitResult[1], "", "true", "0", "true","");
+                                Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
+                                Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),
+                                        Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true","");
+
                                 Toast.makeText(getApplicationContext(), "Add new User", Toast.LENGTH_LONG).show();
 
                             }finally {
@@ -865,7 +868,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                         if(splitResult[1].equals("key_false")){
 
                             editor.putBoolean("haskey",false).commit();
-                            differentkey();
+                            //differentkey();
                         }
 
                     }else {

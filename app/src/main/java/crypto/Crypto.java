@@ -33,15 +33,6 @@ public class Crypto {
     public static int PW_HASH_ITERATION_COUNT = 2500;
     private static MessageDigest md;
 
-    KeyPairGenerator kpg;
-    KeyPair kp;
-    PublicKey publicKey;
-    PrivateKey privateKey;
-    byte [] encryptedBytes,decryptedBytes;
-    Cipher cipher,cipher1;
-    String encrypted,decrypted;
-
-
     public static void writePublicKeyToPreferences(KeyPair keyPair) {
         StringWriter publicStringWriter = new StringWriter();
 
@@ -51,7 +42,7 @@ public class Crypto {
             pemWriter.flush();
             pemWriter.close();
 
-            Main_activity.user.edit().putString("RSA_PUBLIC_KEY", publicStringWriter.toString() ).commit();
+            Main_activity.user.edit().putString("RSA_PUBLIC_KEY", stripPublicKeyHeaders(publicStringWriter.toString())).commit();
 
         } catch (IOException e) {
             Log.e("RSA", e.getMessage());
@@ -68,7 +59,8 @@ public class Crypto {
             pemWriter.close();
 
             try {
-                encryptedKey = AESHelper.encrypt(Main_activity.userpassword, privateStringWriter.toString());
+
+                encryptedKey = AESHelper.encrypt(Main_activity.userpassword, stripPrivateKeyHeaders(privateStringWriter.toString()));
                 privateStringWriter = null;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -84,7 +76,6 @@ public class Crypto {
     }
 
     public static PublicKey getRSAPublicKeyFromString(String publicKeyPEM) throws Exception {
-        publicKeyPEM = stripPublicKeyHeaders(publicKeyPEM);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA", "SC");
         byte[] publicKeyBytes = Base64.decode(publicKeyPEM.getBytes("UTF-8"));
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(publicKeyBytes);
@@ -92,7 +83,6 @@ public class Crypto {
     }
 
     public static PrivateKey getRSAPrivateKeyFromString(String privateKeyPEM) throws Exception {
-        privateKeyPEM = stripPrivateKeyHeaders(privateKeyPEM);
         KeyFactory fact = KeyFactory.getInstance("RSA", "SC");
         byte[] clear = Base64.decode(privateKeyPEM);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);

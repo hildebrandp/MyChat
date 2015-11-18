@@ -1,12 +1,19 @@
 package activity.mychat;
 
+import android.app.ActivityManager;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -73,6 +80,23 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private Long userid;
     private String username;
 
+    private Background_Service serviceConnection;
+
+    //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
+    private BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+                String resultCode = bundle.getString("RESULT");
+                if (resultCode.equals(Long.toString(userid))) {
+                    openAndQueryDatabase();
+                    displayResultList();
+                }
+            }
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,7 +129,9 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         btnsend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                encryptMessage(texttosend.getText().toString());
+                if(!texttosend.getText().toString().equals("")){
+                    encryptMessage(texttosend.getText().toString());
+                }
             }
         });
 
@@ -116,10 +142,37 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             userid = 0L;
         }
 
-        new searchcontact().execute(username,"true");
+        new searchcontact().execute(username, "true");
+
+        if(!isMyServiceRunning(Background_Service.class.getName())){
+
+            startService(new Intent(getBaseContext(), Background_Service.class));
+        }
 
         openAndQueryDatabase();
         displayResultList();
+    }
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        public void onServiceConnected(ComponentName className,IBinder binder) {
+            Background_Service.MyBinder b = (Background_Service.MyBinder) binder;
+            serviceConnection = b.getService();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            serviceConnection = null;
+        }
+    };
+
+    private boolean isMyServiceRunning(String className) {
+        ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (className.equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void openAndQueryDatabase(){
@@ -184,9 +237,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         for (int i = 0; i < chatMessage.size(); i++) {
 
             String tmpmessage = decryptMessage(chatMessage.get(i), i);
-            chatMessage.set(i, tmpmessage);
 
-            Message item = new Message(chatDate.get(i), chatMessage.get(i), chatVerified.get(i), chatSender.get(i));
+            Message item = new Message(chatDate.get(i), tmpmessage, chatVerified.get(i), chatSender.get(i));
             messageItems.add(item);
         }
 
@@ -199,12 +251,12 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
             String decryptedKey = RSA.decryptWithStoredKey(chatAESKey.get(pos));
 
-                try {
-                    decryptedMessage = AESHelper.decrypt(decryptedKey, message);
+            try {
+                decryptedMessage = AESHelper.decrypt(decryptedKey, message);
 
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 
         return decryptedMessage;
     }
@@ -231,7 +283,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             encryptedkey = RSA.encryptWithKey(key, rand);
             privateencrypt = RSA.encryptWithStoredKey(rand);
 
-            String encryptedmessage = "---Message-Break---" + tmpmessage + "---Message-Break---" + encryptedkey + "---Message-Break---";
+            String encryptedmessage = tmpmessage + "---Message-Break---" + encryptedkey;
 
             new sendMessage().execute(encryptedmessage, Long.toString(userid), currentDateandTime);
 
@@ -510,6 +562,18 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        registerReceiver(receiver, new IntentFilter(Background_Service.NOTIFICATION));
+
+        Intent intent= new Intent(this, Background_Service.class);
+        bindService(intent, mConnection, BIND_AUTO_CREATE);
+
+        //serviceConnection.startTimer(10000);
+    }
+
     private class revokekey extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -685,7 +749,9 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                             if(checkkey.equals("false")){
                                 try {
                                     Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
-                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "", "true", "0", "true","");
+                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),
+                                                Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true","");
+
                                     Toast.makeText(getApplicationContext(), "Add new User", Toast.LENGTH_LONG).show();
 
                                 }finally {
@@ -812,4 +878,5 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         }
 
     }
+
 }

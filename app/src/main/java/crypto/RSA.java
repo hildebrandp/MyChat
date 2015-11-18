@@ -87,7 +87,7 @@ public class RSA {
     }
 
     public static String encryptWithStoredKey(String text) {
-        String strippedKey = Crypto.stripPublicKeyHeaders(Main_activity.user.getString("RSA_PUBLIC_KEY", null));
+        String strippedKey = Main_activity.user.getString("RSA_PUBLIC_KEY", null);
         return encryptWithKey(strippedKey, text);
     }
 
@@ -100,7 +100,7 @@ public class RSA {
                 e.printStackTrace();
             }
 
-            String strippedKey = Crypto.stripPrivateKeyHeaders(decryptedKey);
+            String strippedKey = decryptedKey;
             PrivateKey privateKey = Crypto.getRSAPrivateKeyFromString(strippedKey);
             return decryptFromBase64(privateKey, text);
         } catch (Exception e) {
