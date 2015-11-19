@@ -58,7 +58,9 @@
             android:theme="@style/AppTheme.NoActionBar">
         </activity>
 
-        <service android:name=".Background_Service" >
+        <service
+            android:name=".Background_Service"
+            android:launchMode="singleTop">
         </service>
 
 

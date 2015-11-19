@@ -2,18 +2,16 @@ package activity.mychat;
 
 import android.app.ActivityManager;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -30,7 +28,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -40,7 +37,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,13 +46,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
-
 import crypto.AESHelper;
 import crypto.Crypto;
 import crypto.RSA;
 import database.SQLiteHelper;
-import items.contactItem;
-import items.contactListViewAdapter;
+
 
 
 public class Chat_activity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
@@ -80,7 +74,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private Long userid;
     private String username;
 
-    private Background_Service serviceConnection;
+    private NotificationManager mNotificationManager;
 
     //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
     private BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -90,6 +84,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             if (bundle != null) {
                 String resultCode = bundle.getString("RESULT");
                 if (resultCode.equals(Long.toString(userid))) {
+                    mNotificationManager.cancel(0);
                     openAndQueryDatabase();
                     displayResultList();
                 }
@@ -104,6 +99,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         setContentView(R.layout.activity_chat);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
+        mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+
         chatlist = (ListView)findViewById(R.id.chatlistView);
         texttosend = (EditText)findViewById(R.id.texttosend);
         btnsend = (Button)findViewById(R.id.btnsend);
@@ -114,7 +111,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
         Toolbar toolbar1 = (Toolbar) findViewById(R.id.toolbar1);
         setSupportActionBar(toolbar1);
-        toolbar1.setTitle(username);
+        getSupportActionBar().setTitle(username);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -129,41 +126,33 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         btnsend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!texttosend.getText().toString().equals("")){
+                if (!texttosend.getText().toString().equals("")) {
                     encryptMessage(texttosend.getText().toString());
                 }
             }
         });
 
+
         Bundle b = getIntent().getExtras();
-        if(b != null){
-            userid = b.getLong("userid");
-        }else{
-            userid = 0L;
+
+            if(b != null){
+                userid = b.getLong("userid");
+            }else{
+                userid = 0L;
+            }
+
+        if(isMyServiceRunning(Background_Service.class.getName())){
+
+            stopService(new Intent(getBaseContext(), Background_Service.class));
         }
 
-        new searchcontact().execute(username, "true");
-
-        if(!isMyServiceRunning(Background_Service.class.getName())){
-
-            startService(new Intent(getBaseContext(), Background_Service.class));
-        }
+        Intent intent = new Intent(this, Background_Service.class);
+        intent.putExtra("Time", 10000);
+        startService(intent);
 
         openAndQueryDatabase();
         displayResultList();
     }
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-
-        public void onServiceConnected(ComponentName className,IBinder binder) {
-            Background_Service.MyBinder b = (Background_Service.MyBinder) binder;
-            serviceConnection = b.getService();
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            serviceConnection = null;
-        }
-    };
 
     private boolean isMyServiceRunning(String className) {
         ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
@@ -190,7 +179,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
             String selectSearch = "SELECT * " +
                     "FROM chatlist " +
-                    "WHERE CHAT_ID = ? ";
+                    "WHERE CHAT_ID = ? " +
+                    "ORDER BY CHAT_DATE ASC";
 
             Cursor c = Main_activity.newDB.rawQuery(selectSearch, data);
 
@@ -233,10 +223,15 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
         messageItems = new ArrayList<Message>();
         messageItems.clear();
+        String tmpmessage;
 
         for (int i = 0; i < chatMessage.size(); i++) {
 
-            String tmpmessage = decryptMessage(chatMessage.get(i), i);
+            if(i == 0){
+                tmpmessage = "Chat Created";
+            }else {
+                tmpmessage = decryptMessage(chatMessage.get(i), i);
+            }
 
             Message item = new Message(chatDate.get(i), tmpmessage, chatVerified.get(i), chatSender.get(i));
             messageItems.add(item);
@@ -566,12 +561,15 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     protected void onResume() {
         super.onResume();
 
-        registerReceiver(receiver, new IntentFilter(Background_Service.NOTIFICATION));
+        new searchcontact().execute(username, "true");
 
-        Intent intent= new Intent(this, Background_Service.class);
-        bindService(intent, mConnection, BIND_AUTO_CREATE);
+        registerReceiver(receiver, new IntentFilter(Background_Service.NOTIFICATION_CHAT));
+    }
 
-        //serviceConnection.startTimer(10000);
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(receiver);
     }
 
     private class revokekey extends AsyncTask<String, Integer, Double> {
@@ -683,17 +681,18 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
         protected Double doInBackground(String... params) {
             // TODO Auto-generated method stub
-            postData(params[0],params[1]);
+            postData(params[0], params[1]);
             return null;
         }
 
-        protected void onPostExecute(Double result){
+        protected void onPostExecute(Double result) {
             //Toast.makeText(getApplicationContext(), "command sent", Toast.LENGTH_LONG).show();
         }
-        protected void onProgressUpdate(Integer... progress){
+
+        protected void onProgressUpdate(Integer... progress) {
         }
 
-        public void postData(String valueIWantToSend1,final String checkkey) {
+        public void postData(String valueIWantToSend1, final String checkkey) {
 
 
             // Create a new HttpClient and Post Header
@@ -703,7 +702,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             try {
                 // Add your data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-                nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME","")));
+                nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.user.getString("USER_PASSWORD", "")));
                 nameValuePairs.add(new BasicNameValuePair("usercontact", valueIWantToSend1));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
@@ -746,38 +745,57 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                         if (!splitResult[1].equals("no_user")) {
 
-                            if(checkkey.equals("false")){
+                            if (checkkey.equals("false")) {
                                 try {
+
                                     Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
-                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),
-                                                Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true","");
+                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "");
+
+                                } finally {
 
                                     Toast.makeText(getApplicationContext(), "Add new User", Toast.LENGTH_LONG).show();
-
-                                }finally {
-
                                 }
-                            }else{
 
-                                String[] data = new String[2];
-                                data[0] = splitResult[3];
-                                data[1] = Long.toString(userid);
+                            } else if (checkkey.equals("true")){
 
-                                String updatecontact = "UPDATE userlist " +
-                                        "SET USER_PUBLICKEY = ? " +
-                                        "WHERE USER_NAME = ? ";
+                                String[] data = new String[1];
+                                data[0] = Long.toString(userid);
 
-                                Cursor c = Main_activity.newDB.rawQuery(updatecontact, data);
+                                String selectKey = "SELECT userlist.USER_PUBLICKEY " +
+                                        "FROM userlist " +
+                                        "WHERE userlist.USER_ID = ? ";
+
+                                Cursor c = Main_activity.newDB.rawQuery(selectKey, data);
+                                String tmpkey = "---";
+
+                                if (c != null ) {
+                                    if (c.moveToFirst()) {
+                                        tmpkey = c.getString(c.getColumnIndex("USER_PUBLICKEY"));
+
+                                    }
+                                }
+
+                                if(!tmpkey.equals(splitResult[3])){
+                                    Main_activity.datasourceChat.deleteEntry(splitResult[1]);
+
+                                    Main_activity.datasourceUser.deleteEntry(splitResult[1]);
+
+                                    Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
+                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "");
+
+                                    Toast.makeText(getApplicationContext(), "User has changed his Public Key", Toast.LENGTH_LONG).show();
+                                }
+
                             }
 
-                        }else{
+                        } else {
                             searchforuser();
-                            Toast.makeText(getApplicationContext(), "No User" , Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(), "No User", Toast.LENGTH_LONG).show();
                         }
 
-                    }else {
+                    } else {
 
-                        Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_LONG).show();
                     }
                 }
             });
@@ -864,7 +882,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                         if(splitResult[1].equals("message_send")){
 
-                            Toast.makeText(getApplicationContext(), "Message Send" , Toast.LENGTH_LONG).show();
+                            //Toast.makeText(getApplicationContext(), "Message Send" , Toast.LENGTH_LONG).show();
                         }
 
                     }else {

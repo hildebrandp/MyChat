@@ -44,9 +44,8 @@ public class userEntryDataSource {
         return newDbEntry;
     }
 
-    public void deleteEntry(userDbEntry id) {
-        userdatabase.delete(SQLiteHelper.TABLE_USER, SQLiteHelper.COLUMN_USER_ID
-                + " = " + id, null);
+    public void deleteEntry(String id) {
+        userdatabase.delete(SQLiteHelper.TABLE_USER, SQLiteHelper.COLUMN_USER_ID + " = " + id, null);
     }
 
     private userDbEntry cursorToEntry(Cursor cursor) {

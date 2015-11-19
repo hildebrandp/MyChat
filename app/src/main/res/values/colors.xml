@@ -3,7 +3,7 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="bg_msg_you">#5eb964</color>
-    <color name="bg_msg_from">#00aedb</color>
+    <color name="bg_msg_you">#00b159</color>
+    <color name="bg_msg_from">#f37735</color>
 
 </resources>

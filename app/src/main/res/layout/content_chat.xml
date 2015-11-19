@@ -4,42 +4,42 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
-    android:paddingTop="16dp"
-    android:paddingBottom="16dp"
+    android:fitsSystemWindows="true"
+    android:background="@drawable/chatbackgroundcolor"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".Chat_activity"
     tools:showIn="@layout/app_bar_chat">
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Send"
-            android:id="@+id/btnsend"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true" />
 
-        <EditText
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/texttosend"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_toLeftOf="@+id/btnsend"
-            android:layout_toStartOf="@+id/btnsend" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:text="  Send  "
+        android:id="@+id/btnsend"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"/>
 
-        <ListView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/chatlistView"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_above="@+id/texttosend"
-            android:transcriptMode="alwaysScroll"
-            android:stackFromBottom="true"/>
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:id="@+id/texttosend"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_toLeftOf="@+id/btnsend"
+        android:layout_toStartOf="@+id/btnsend"/>
 
-    </RelativeLayout>
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/chatlistView"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/btnsend"
+        android:transcriptMode="alwaysScroll"
+        android:stackFromBottom="true"/>
+
+
+</RelativeLayout>

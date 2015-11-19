@@ -56,7 +56,8 @@ public class Background_Service extends Service {
     public static chatEntryDataSource datasourceChat;
     public static userEntryDataSource datasourceUser;
 
-    public static final String NOTIFICATION = "NEW_MESSAGE";
+    public static final String NOTIFICATION_CHAT = "NEW_MESSAGE";
+    public static final String NOTIFICATION_USER = "NEW_USER";
     private final IBinder mBinder = new MyBinder();
 
     @Override
@@ -73,8 +74,7 @@ public class Background_Service extends Service {
         SQLiteHelper dbHelper = new SQLiteHelper(this);
         newDB = dbHelper.getWritableDatabase();
 
-        Toast.makeText(this, "Service Gestartet", Toast.LENGTH_LONG).show();
-
+        //Toast.makeText(this, "Service Gestartet", Toast.LENGTH_LONG).show();
 
         datasourceChat = new chatEntryDataSource(this);
         datasourceChat.open();
@@ -147,8 +147,14 @@ public class Background_Service extends Service {
     }
 
     private void publishResults(String result) {
-        Intent intent = new Intent(NOTIFICATION);
+        Intent intent = new Intent(NOTIFICATION_CHAT);
         intent.putExtra("RESULT", result);
+        sendBroadcast(intent);
+    }
+
+    private void publishNewUser() {
+        Intent intent = new Intent(NOTIFICATION_USER);
+        intent.putExtra("RESULT", "TRUE");
         sendBroadcast(intent);
     }
 
@@ -239,24 +245,26 @@ public class Background_Service extends Service {
                             Long sender = Long.parseLong(splitResult2[0]);
                             String reciever = user.getString("USER_ID", "");
 
-                            String[] splitmessage = String.valueOf(splitResult2[2]).split("---Message-Break---");
+                                String[] data = new String[1];
+                                data[0] = splitResult2[0];
 
+                                String selectSearch = "SELECT userlist.USER_ID " +
+                                        "FROM userlist " +
+                                        "WHERE userlist.USER_ID = ? ";
+
+                                Cursor c = newDB.rawQuery(selectSearch, data);
+
+                                int count = c.getCount();
+                                if (count == 0) {
+
+                                    new addcontact().execute(data[0]);
+                                }
+
+
+                            String[] splitmessage = String.valueOf(splitResult2[2]).split("---Message-Break---");
                             datasourceChat.createChatEntry(sender, splitResult2[0], reciever, splitmessage[0] , "false", splitResult2[1], "true", splitmessage[1]);
 
-                            String[] data = new String[1];
-                            data[0] = splitResult2[0];
 
-                            String selectSearch = "SELECT userlist.USER_ID " +
-                                    "FROM userlist " +
-                                    "WHERE userlist.USER_ID = ? ";
-
-                            Cursor c = newDB.rawQuery(selectSearch, data);
-
-                            int count = c.getCount();
-                            if (count == 0) {
-
-                                new addcontact().execute(data[0]);
-                            }
                             c.close();
                             publishResults(splitResult2[0]);
 
@@ -289,7 +297,7 @@ public class Background_Service extends Service {
 
             // Create a new HttpClient and Post Header
             HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/newcontact.php");
+            HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/addcontact.php");
 
             try {
                 // Add your data
@@ -332,16 +340,18 @@ public class Background_Service extends Service {
                     String[] splitResult = String.valueOf(resp).split("::");
                     if (splitResult[0].equals("login_true")) {
 
-                        if (!splitResult[1].equals("no_user")) {
-
                             try {
-                                datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
+
+                                Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
+                                Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "");
 
                             }finally {
 
+                                publishNewUser();
                             }
 
-                        }
+
+
                     }
 
 

@@ -3,9 +3,12 @@ package activity.mychat;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -80,11 +83,31 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     private ArrayList<String> chatDate = new ArrayList<String>();
     private List<contactItem> contactItems;
 
+    private NotificationManager mNotificationManager;
+
+    //Broadcast um das ListView zu Aktualisieren wenn neuer User Hinzugefügt wurde
+    private BroadcastReceiver receiveruser = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+                String resultCode = bundle.getString("RESULT");
+                if (resultCode.equals("TRUE")) {
+                    openAndQueryDatabase();
+                    displayResultList();
+                    chatListView.setClickable(true);
+                }
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+
+        mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
 
         user = getSharedPreferences("myapplab.securechat", MODE_PRIVATE);
         editor = user.edit();
@@ -197,11 +220,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             userName.clear();
             chatDate.clear();
 
-            //String selectQuery = "SELECT userlist.USER_ID, userlist.USER_NAME, chatlist.CHAT_ID, chatlist.CHAT_DATE " +
-            //                     "FROM userlist INNER JOIN chatlist " +
-            //                     "ON USER_ID = CHAT_ID " +
-            //                     "ORDER BY chatlist.CHAT_DATE DESC";
-
             String selectQuery = "SELECT USER_ID,USER_NAME " +
                                  "FROM userlist " +
                                  "ORDER BY USER_NAME DESC";
@@ -268,6 +286,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             userID.add(0L);
             userName.add("No User available");
             chatDate.add("Please add user");
+            chatListView.setClickable(false);
         }
 
         for (int i = 0; i < userID.size(); i++) {
@@ -512,6 +531,15 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     @Override
     protected void onResume() {
 
+        if(isMyServiceRunning(Background_Service.class.getName())){
+            stopService(new Intent(getBaseContext(), Background_Service.class));
+        }
+
+        Intent intent = new Intent(this, Background_Service.class);
+        intent.putExtra("Time", 30000);
+        startService(intent);
+
+
         if(!user.getBoolean("key",false)){
             createnewkey();
         }else{
@@ -523,16 +551,20 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             //differentkey();
         }
 
-        if(isMyServiceRunning(Background_Service.class.getName())){
-            Log.d("Service: ", "active" );
-        } else {
-            startService(new Intent(getBaseContext(), Background_Service.class));
-        }
+        mNotificationManager.cancel(0);
+
+        registerReceiver(receiveruser, new IntentFilter(Background_Service.NOTIFICATION_USER));
 
         openAndQueryDatabase();
         displayResultList();
 
         super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(receiveruser);
     }
 
     private boolean isMyServiceRunning(String className) {
@@ -769,6 +801,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                             }finally {
 
+                                chatListView.setClickable(true);
                                 openAndQueryDatabase();
                                 displayResultList();
 
