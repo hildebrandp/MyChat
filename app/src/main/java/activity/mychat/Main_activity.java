@@ -388,6 +388,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             logout();
         }else if (id == R.id.nav_deleteacc) {
 
+            deleteAccount();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -493,8 +494,39 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             public void onClick(DialogInterface dialog, int which) {
                 editor.clear();
                 editor.commit();
+                SQLiteHelper.cleanTable(newDB);
 
                 openlogin();
+            }
+        });
+
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+    private void deleteAccount(){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Secure Chat");
+        builder.setMessage("Delete your Account?\nPlease enter Revoke Key:");
+
+        // Set up the input
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                new deleteAccount().execute(Crypto.hashpassword(input.getText().toString(), userpassword));
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
             }
         });
 
@@ -537,10 +569,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         startService(intent);
 
         new checkPublicKey().execute();
-
-        if(!user.getBoolean("haskey",false)){
-            differentkey();
-        }
 
         mNotificationManager.cancel(0);
 
@@ -692,7 +720,9 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                                 editor.putString("RSA_PRIVATE_KEY", "");
                                 editor.putBoolean("key", false);
                                 editor.commit();
+                                SQLiteHelper.cleanTable(newDB);
                                 createnewkey();
+
                             }else {
 
                                 Toast.makeText(getApplicationContext(), "Error Please try again", Toast.LENGTH_LONG).show();
@@ -906,6 +936,96 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                     }else {
 
                         openlogin();
+                        Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+
+
+        }
+
+    }
+
+    private class deleteAccount extends AsyncTask<String, Integer, Double> {
+
+        protected Double doInBackground(String... params) {
+            // TODO Auto-generated method stub
+
+            postData(params[0]);
+            return null;
+        }
+
+        protected void onPostExecute(Double result){
+            //Toast.makeText(getApplicationContext(), "command sent", Toast.LENGTH_LONG).show();
+        }
+        protected void onProgressUpdate(Integer... progress){
+        }
+
+        public void postData(String revokekey) {
+
+
+            // Create a new HttpClient and Post Header
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/deleteAccount.php");
+
+            try {
+
+                // Add your data
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+                nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
+                nameValuePairs.add(new BasicNameValuePair("userid", user.getString("USER_ID", "")));
+                nameValuePairs.add(new BasicNameValuePair("userrevokekey", revokekey));
+                nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
+                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+                // Execute HTTP Post Request
+                HttpResponse response = httpclient.execute(httppost);
+                HttpEntity entity = response.getEntity();
+                InputStream is = entity.getContent();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                StringBuilder sb = new StringBuilder();
+
+                String line = null;
+                try {
+                    while ((line = reader.readLine()) != null) {
+                        sb.append((line));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                resp = sb.toString();
+            } catch (ClientProtocolException e) {
+                // TODO Auto-generated catch block
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+            }
+
+            runOnUiThread(new Runnable() {
+                public void run() {
+
+                    String[] splitResult = String.valueOf(resp).split("::");
+
+                    if(splitResult[0].equals("login_false")) {
+
+                        Toast.makeText(getApplicationContext(), "Delete Error" , Toast.LENGTH_LONG).show();
+
+                    }else if(splitResult[0].equals("login_true")){
+
+                        editor.clear();
+                        editor.commit();
+                        SQLiteHelper.cleanTable(newDB);
+                        openlogin();
+
+                    }else {
+
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
                     }
                 }

@@ -76,6 +76,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private String username;
 
     private NotificationManager mNotificationManager;
+    private static char[] VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456879".toCharArray();
 
     //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
     private BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -191,15 +192,19 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                 if  (c.moveToFirst()) {
                     do {
                         String tmpchatMessage = c.getString(c.getColumnIndex("CHAT_MESSAGE"));
-                        String tmpchatDate  = c.getString(c.getColumnIndex("CHAT_DATE"));
-                        String tmpchatsender = c.getString(c.getColumnIndex("CHAT_SENDER_ID"));
-                        String tmpchatAESKey = c.getString(c.getColumnIndex("CHAT_AESKEY"));
 
-                        chatDate.add(tmpchatDate);
-                        chatMessage.add(tmpchatMessage);
-                        chatVerified.add("false");
-                        chatSender.add(tmpchatsender);
-                        chatAESKey.add(tmpchatAESKey);
+                            if(tmpchatMessage.length() > 0){
+
+                                String tmpchatDate  = c.getString(c.getColumnIndex("CHAT_DATE"));
+                                String tmpchatsender = c.getString(c.getColumnIndex("CHAT_SENDER_ID"));
+                                String tmpchatAESKey = c.getString(c.getColumnIndex("CHAT_AESKEY"));
+
+                                chatDate.add(tmpchatDate);
+                                chatMessage.add(tmpchatMessage);
+                                chatVerified.add("false");
+                                chatSender.add(tmpchatsender);
+                                chatAESKey.add(tmpchatAESKey);
+                            }
 
                     }while (c.moveToNext());
                 }
@@ -338,13 +343,19 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
-    public String random() {
+    public static String random() {
+        SecureRandom srand = new SecureRandom();
+        Random rand = new Random();
+        char[] buff = new char[128];
 
-        SecureRandom sr = new SecureRandom();
-        byte[] output = new byte[128];
-        sr.nextBytes(output);
-
-        return sr.toString();
+        for (int i = 0; i < 128; ++i) {
+            // reseed rand once you've used up all available entropy bits
+            if ((i % 10) == 0) {
+                rand.setSeed(srand.nextLong()); // 64 bits of random!
+            }
+            buff[i] = VALID_CHARACTERS[rand.nextInt(VALID_CHARACTERS.length)];
+        }
+        return new String(buff);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -366,6 +377,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             logout();
         }else if (id == R.id.nav_deleteacc) {
 
+            deleteAccount();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -546,8 +558,39 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             public void onClick(DialogInterface dialog, int which) {
                 Main_activity.editor.clear();
                 Main_activity.editor.commit();
+                SQLiteHelper.cleanTable(Main_activity.newDB);
 
                 openlogin();
+            }
+        });
+
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+    private void deleteAccount(){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Secure Chat");
+        builder.setMessage("Delete your Account?\nPlease enter Revoke Key:");
+
+        // Set up the input
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                new deleteAccount().execute(Crypto.hashpassword(input.getText().toString(), Main_activity.userpassword));
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
             }
         });
 
@@ -782,6 +825,13 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                                     Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "");
 
                                     Toast.makeText(getApplicationContext(), "User has changed his Public Key", Toast.LENGTH_LONG).show();
+                                }else if(splitResult[3].equals("-") || splitResult[3].equals("---")){
+
+                                    Toast.makeText(getApplicationContext(), "User has no Public Key\nPlease try again later!", Toast.LENGTH_LONG).show();
+                                    btnsend.setClickable(false);
+                                    texttosend.setText("Can´t send Message!");
+                                    texttosend.setClickable(false);
+
                                 }
 
                             }
@@ -895,4 +945,93 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
     }
 
+    private class deleteAccount extends AsyncTask<String, Integer, Double> {
+
+        protected Double doInBackground(String... params) {
+            // TODO Auto-generated method stub
+
+            postData(params[0]);
+            return null;
+        }
+
+        protected void onPostExecute(Double result){
+            //Toast.makeText(getApplicationContext(), "command sent", Toast.LENGTH_LONG).show();
+        }
+        protected void onProgressUpdate(Integer... progress){
+        }
+
+        public void postData(String revokekey) {
+
+
+            // Create a new HttpClient and Post Header
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/deleteAccount.php");
+
+            try {
+
+                // Add your data
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+                nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.user.getString("USER_PASSWORD", "")));
+                nameValuePairs.add(new BasicNameValuePair("userid", Main_activity.user.getString("USER_ID", "")));
+                nameValuePairs.add(new BasicNameValuePair("userrevokekey", revokekey));
+                nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
+                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+                // Execute HTTP Post Request
+                HttpResponse response = httpclient.execute(httppost);
+                HttpEntity entity = response.getEntity();
+                InputStream is = entity.getContent();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                StringBuilder sb = new StringBuilder();
+
+                String line = null;
+                try {
+                    while ((line = reader.readLine()) != null) {
+                        sb.append((line));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                resp = sb.toString();
+            } catch (ClientProtocolException e) {
+                // TODO Auto-generated catch block
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+            }
+
+            runOnUiThread(new Runnable() {
+                public void run() {
+
+                    String[] splitResult = String.valueOf(resp).split("::");
+
+                    if(splitResult[0].equals("login_false")) {
+
+                        Toast.makeText(getApplicationContext(), "Delete Error" , Toast.LENGTH_LONG).show();
+
+                    }else if(splitResult[0].equals("login_true")){
+
+                        Main_activity.editor.clear();
+                        Main_activity.editor.commit();
+                        SQLiteHelper.cleanTable(Main_activity.newDB);
+                        openlogin();
+
+                    }else {
+
+                        Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+
+
+        }
+
+    }
 }
