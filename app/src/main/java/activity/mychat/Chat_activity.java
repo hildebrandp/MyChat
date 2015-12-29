@@ -41,6 +41,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -338,15 +339,12 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     }
 
     public String random() {
-        char[] chars1 = "ABCDEF012GHIJKL345MNOPQR678STUVWXYZ9".toCharArray();
-        StringBuilder sb1 = new StringBuilder();
-        Random random1 = new Random();
-        for (int i = 0; i < 128; i++)
-        {
-            char c1 = chars1[random1.nextInt(chars1.length)];
-            sb1.append(c1);
-        }
-        return sb1.toString();
+
+        SecureRandom sr = new SecureRandom();
+        byte[] output = new byte[128];
+        sr.nextBytes(output);
+
+        return sr.toString();
     }
 
     @SuppressWarnings("StatementWithEmptyBody")

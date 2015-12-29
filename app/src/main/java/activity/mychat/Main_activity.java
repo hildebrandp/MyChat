@@ -208,8 +208,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             }
         });
 
-        onAppStart();
-
     }
 
     private void openAndQueryDatabase(){
@@ -331,11 +329,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
-    private void onAppStart(){
-
-        showusername.setText(user.getString("USER_NAME", "Error loading Data"));
-    }
-
     private void openChat(int position){
 
         Long userid = userID.get(position);
@@ -391,6 +384,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
             revokekey();
         } else if (id == R.id.nav_logout) {
+
             logout();
         }else if (id == R.id.nav_deleteacc) {
 
@@ -416,7 +410,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                new revokekey().execute(input.getText().toString());
+
+                new revokekey().execute(Crypto.hashpassword(input.getText().toString(), userpassword));
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -489,7 +484,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                new revokekey().execute(input.getText().toString());
+                new revokekey().execute(Crypto.hashpassword(input.getText().toString(), userpassword));
             }
         });
 
@@ -531,6 +526,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     @Override
     protected void onResume() {
 
+        showusername.setText(user.getString("USER_NAME", "Error loading Data"));
+
         if(isMyServiceRunning(Background_Service.class.getName())){
             stopService(new Intent(getBaseContext(), Background_Service.class));
         }
@@ -539,16 +536,10 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         intent.putExtra("Time", 30000);
         startService(intent);
 
+        new checkPublicKey().execute();
 
-        if(!user.getBoolean("key",false)){
-            createnewkey();
-        }else{
-            new checkPublicKey().execute();
-        }
-
-        //fehler kommt von hier
         if(!user.getBoolean("haskey",false)){
-            //differentkey();
+            differentkey();
         }
 
         mNotificationManager.cancel(0);
@@ -646,7 +637,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
-                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(valueIWantToSend1, userpassword)));
+                nameValuePairs.add(new BasicNameValuePair("userrevokekey", valueIWantToSend1));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -703,6 +694,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                                 editor.commit();
                                 createnewkey();
                             }else {
+
                                 Toast.makeText(getApplicationContext(), "Error Please try again", Toast.LENGTH_LONG).show();
                             }
 
@@ -848,13 +840,10 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
             try {
 
-                String tmppublickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
-                String publickey = Crypto.stripPublicKeyHeaders(tmppublickey);
                 // Add your data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
-                nameValuePairs.add(new BasicNameValuePair("userkey", publickey));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -898,10 +887,20 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                     }else if(splitResult[0].equals("login_true")){
 
-                        if(splitResult[1].equals("key_false")){
+                        String publickeyphone = user.getString("RSA_PUBLIC_KEY", "");
+                        String publickeyserver = splitResult[1];
 
-                            editor.putBoolean("haskey",false).commit();
-                            //differentkey();
+                        if(publickeyserver.equals("---")){
+
+                            createnewkey();
+
+                        }else if(!publickeyphone.equals(publickeyserver)){
+                            
+                            if(publickeyserver.equals("-")){
+
+                                differentkey();
+
+                            }
                         }
 
                     }else {

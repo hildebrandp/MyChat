@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.KeyPair;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -127,15 +128,12 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
     }
 
     public static String random() {
-        char[] chars1 = "ABCDEF012GHIJKL345MNOPQR678STUVWXYZ9".toCharArray();
-        StringBuilder sb1 = new StringBuilder();
-        Random random1 = new Random();
-            for (int i = 0; i < 10; i++)
-            {
-                char c1 = chars1[random1.nextInt(chars1.length)];
-                sb1.append(c1);
-            }
-        return sb1.toString();
+
+        SecureRandom sr = new SecureRandom();
+        byte[] output = new byte[16];
+        sr.nextBytes(output);
+
+        return sr.toString();
     }
 
     private void revokekeywindow(){

@@ -149,7 +149,6 @@ public class Login_activity extends AppCompatActivity {
         if (doubleBackToExitPressedOnce) {
             //Clean Ram!!!!
 
-
             super.onBackPressed();
             return;
         }
@@ -169,7 +168,13 @@ public class Login_activity extends AppCompatActivity {
     private class acclogin extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
-            // TODO Auto-generated method stub
+
+            if(!params[0].equals(user.getString("USER_NAME", ""))){
+
+                editor.clear();
+                editor.commit();
+            }
+
             postData(params[0],params[1]);
             return null;
         }
