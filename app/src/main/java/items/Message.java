@@ -1,4 +1,4 @@
-package activity.mychat;
+package items;
 
 public class Message {
     private String chatDate, chatMessage, chatVerified,senderid;

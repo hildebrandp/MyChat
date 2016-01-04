@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -50,8 +51,10 @@ import java.util.Random;
 import crypto.AESHelper;
 import crypto.Crypto;
 import crypto.RSA;
+import crypto.SignatureUtils;
 import database.SQLiteHelper;
-
+import items.Message;
+import items.MessagesListAdapter;
 
 
 public class Chat_activity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
@@ -63,6 +66,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private ArrayList<String> chatVerified = new ArrayList<String>();
     private ArrayList<String> chatSender = new ArrayList<String>();
     private ArrayList<String> chatAESKey = new ArrayList<String>();
+    private ArrayList<String> chatSignature = new ArrayList<String>();
+
     private List<Message> messageItems;
     private MessagesListAdapter mAdapter;
 
@@ -77,6 +82,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
     private NotificationManager mNotificationManager;
     private static char[] VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456879".toCharArray();
+
+    public static SQLiteDatabase newDB;
 
     //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
     private BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -110,6 +117,9 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
         userid = getIntent().getExtras().getLong("userid");
         username = getIntent().getExtras().getString("username");
+
+        SQLiteHelper dbHelper = new SQLiteHelper(this);
+        newDB = dbHelper.getWritableDatabase();
 
         Toolbar toolbar1 = (Toolbar) findViewById(R.id.toolbar1);
         setSupportActionBar(toolbar1);
@@ -175,6 +185,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             chatDate.clear();
             chatSender.clear();
             chatAESKey.clear();
+            chatSignature.clear();
 
             String[] data = new String[1];
             data[0] = Long.toString(userid);
@@ -198,12 +209,14 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                                 String tmpchatDate  = c.getString(c.getColumnIndex("CHAT_DATE"));
                                 String tmpchatsender = c.getString(c.getColumnIndex("CHAT_SENDER_ID"));
                                 String tmpchatAESKey = c.getString(c.getColumnIndex("CHAT_AESKEY"));
+                                String tmpSignature = c.getString(c.getColumnIndex("CHAT_SIGNATURE"));
 
                                 chatDate.add(tmpchatDate);
                                 chatMessage.add(tmpchatMessage);
                                 chatVerified.add("false");
                                 chatSender.add(tmpchatsender);
                                 chatAESKey.add(tmpchatAESKey);
+                                chatSignature.add(tmpSignature);
                             }
 
                     }while (c.moveToNext());
@@ -230,21 +243,45 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         messageItems = new ArrayList<Message>();
         messageItems.clear();
         String tmpmessage;
+        String tmpSignature="false";
 
         for (int i = 0; i < chatMessage.size(); i++) {
 
             if(i == 0){
+
                 tmpmessage = "Chat Created";
             }else {
+
                 tmpmessage = decryptMessage(chatMessage.get(i), i);
+                tmpSignature = ""+checkSignature(chatSignature.get(i), tmpmessage, chatSender.get(i));
+
+                if(tmpmessage.length() == 0){
+
+                    tmpmessage = "System:Can´t Decrypt";
+                }
             }
 
-            Message item = new Message(chatDate.get(i), tmpmessage, chatVerified.get(i), chatSender.get(i));
+            Message item = new Message(chatDate.get(i), tmpmessage, tmpSignature, chatSender.get(i));
             messageItems.add(item);
         }
 
         mAdapter = new MessagesListAdapter(this, messageItems);
         chatListView.setAdapter(mAdapter);
+    }
+
+    private Boolean checkSignature(String signature, String message, String id){
+
+        boolean isValid;
+        String pubkey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
+
+            if(id != pubkey){
+
+                pubkey = getPublicKey();
+            }
+
+        isValid = SignatureUtils.checkSignature(signature, message, pubkey);
+
+        return isValid;
     }
 
     private String decryptMessage(String message,int pos){
@@ -270,13 +307,14 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             String tmpmessage=null;
             String encryptedkey;
             String privateencrypt;
+            String encryptedmessage=null;
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String currentDateandTime = sdf.format(Calendar.getInstance().getTime());
 
                 try {
 
-                    tmpmessage = AESHelper.encrypt(rand, message);
+                    encryptedmessage = AESHelper.encrypt(rand, message);
                 }catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -284,11 +322,13 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             encryptedkey = RSA.encryptWithKey(key, rand);
             privateencrypt = RSA.encryptWithStoredKey(rand);
 
-            String encryptedmessage = tmpmessage + "---Message-Break---" + encryptedkey;
+            String signature = SignatureUtils.genSignature(message);
 
-            new sendMessage().execute(encryptedmessage, Long.toString(userid), currentDateandTime);
 
-            Main_activity.datasourceChat.createChatEntry(userid, Main_activity.user.getString("USER_ID","0"), Long.toString(userid), tmpmessage, "true", currentDateandTime, "true", privateencrypt);
+
+            new sendMessage().execute(encryptedmessage, currentDateandTime, encryptedkey, signature);
+
+            Main_activity.datasourceChat.createChatEntry(userid, Main_activity.user.getString("USER_ID", "0"), Long.toString(userid), tmpmessage, "true", currentDateandTime, "true", privateencrypt, signature);
 
             texttosend.setText("");
 
@@ -374,6 +414,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
             revokekey();
         } else if (id == R.id.nav_logout) {
+
             logout();
         }else if (id == R.id.nav_deleteacc) {
 
@@ -445,10 +486,10 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             public void onClick(DialogInterface dialog, int id) {
 
                 Main_activity.editor.clear();
-                Main_activity.editor.putBoolean("login", false);
                 Main_activity.editor.commit();
 
-                SQLiteHelper.cleanTable(Main_activity.newDB);
+                SQLiteHelper.cleanTableChat(newDB);
+                SQLiteHelper.cleanTableUser(newDB);
 
                 openlogin();
             }
@@ -558,7 +599,9 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             public void onClick(DialogInterface dialog, int which) {
                 Main_activity.editor.clear();
                 Main_activity.editor.commit();
-                SQLiteHelper.cleanTable(Main_activity.newDB);
+
+                SQLiteHelper.cleanTableChat(newDB);
+                SQLiteHelper.cleanTableUser(newDB);
 
                 openlogin();
             }
@@ -790,7 +833,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                                 try {
 
                                     Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
-                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "");
+                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "","");
 
                                 } finally {
 
@@ -822,7 +865,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                                     Main_activity.datasourceUser.deleteEntry(splitResult[1]);
 
                                     Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
-                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "");
+                                    Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "","");
 
                                     Toast.makeText(getApplicationContext(), "User has changed his Public Key", Toast.LENGTH_LONG).show();
                                 }else if(splitResult[3].equals("-") || splitResult[3].equals("---")){
@@ -858,7 +901,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         protected Double doInBackground(String... params) {
             // TODO Auto-generated method stub
 
-            postData(params[0],params[1],params[2]);
+            postData(params[0],params[1],params[2],params[3]);
             return null;
         }
 
@@ -868,7 +911,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         protected void onProgressUpdate(Integer... progress){
         }
 
-        public void postData(final String message,final String inserid,String date) {
+        public void postData(final String message,String date,String key, String signature) {
 
 
             // Create a new HttpClient and Post Header
@@ -882,6 +925,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                 nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.user.getString("USER_PASSWORD", "")));
                 nameValuePairs.add(new BasicNameValuePair("message", message));
+                nameValuePairs.add(new BasicNameValuePair("encryptedkey", key));
+                nameValuePairs.add(new BasicNameValuePair("signature", signature));
                 nameValuePairs.add(new BasicNameValuePair("date", date));
                 nameValuePairs.add(new BasicNameValuePair("receiverid", Long.toString(userid)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
@@ -1020,7 +1065,10 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                         Main_activity.editor.clear();
                         Main_activity.editor.commit();
-                        SQLiteHelper.cleanTable(Main_activity.newDB);
+
+                        SQLiteHelper.cleanTableChat(newDB);
+                        SQLiteHelper.cleanTableUser(newDB);
+
                         openlogin();
 
                     }else {

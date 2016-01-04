@@ -64,12 +64,11 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     public static SharedPreferences.Editor editor;
 
     private boolean doubleBackToExitPressedOnce = false;
-    ActionBarDrawerToggle drawerToggle;
+    private ActionBarDrawerToggle drawerToggle;
 
     public static String userpassword;
     private String resp;
 
-    public final SQLiteHelper dbHelper = new SQLiteHelper(this);
     public static SQLiteDatabase newDB;
     public static userEntryDataSource datasourceUser;
     public static chatEntryDataSource datasourceChat;
@@ -438,7 +437,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 editor.putBoolean("login", false);
                 editor.commit();
 
-                SQLiteHelper.cleanTable(newDB);
+                SQLiteHelper.cleanTableChat(newDB);
+                SQLiteHelper.cleanTableUser(newDB);
 
                 openlogin();
             }
@@ -494,7 +494,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             public void onClick(DialogInterface dialog, int which) {
                 editor.clear();
                 editor.commit();
-                SQLiteHelper.cleanTable(newDB);
+                SQLiteHelper.cleanTableChat(newDB);
+                SQLiteHelper.cleanTableUser(newDB);
 
                 openlogin();
             }
@@ -720,7 +721,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                                 editor.putString("RSA_PRIVATE_KEY", "");
                                 editor.putBoolean("key", false);
                                 editor.commit();
-                                SQLiteHelper.cleanTable(newDB);
+                                SQLiteHelper.cleanTableChat(newDB);
                                 createnewkey();
 
                             }else {
@@ -817,7 +818,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                             try {
                                 Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
                                 Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),
-                                        Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true","");
+                                        Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true","","");
 
                                 Toast.makeText(getApplicationContext(), "Add new User", Toast.LENGTH_LONG).show();
 
@@ -1021,7 +1022,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                         editor.clear();
                         editor.commit();
-                        SQLiteHelper.cleanTable(newDB);
+
+
                         openlogin();
 
                     }else {

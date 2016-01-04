@@ -18,7 +18,7 @@ public class chatEntryDataSource {
 
     private String[] allColumnsChat = { SQLiteHelper.COLUMN_CHATID, SQLiteHelper.COLUMN_CHAT_ID,
             SQLiteHelper.COLUMN_CHAT_SENDER_ID, SQLiteHelper.COLUMN_CHAT_RECIEVER_ID, SQLiteHelper.COLUMN_CHAT_MESSAGE,
-            SQLiteHelper.COLUMN_CHAT_READ, SQLiteHelper.COLUMN_CHAT_DATE, SQLiteHelper.COLUMN_CHAT_ISSEND, SQLiteHelper.COLUMN_CHAT_AESKEY};
+            SQLiteHelper.COLUMN_CHAT_READ, SQLiteHelper.COLUMN_CHAT_DATE, SQLiteHelper.COLUMN_CHAT_ISSEND, SQLiteHelper.COLUMN_CHAT_AESKEY, SQLiteHelper.COLUMN_CHAT_SIGNATURE};
 
     public chatEntryDataSource(Context context) {
         chatdbHelper = new SQLiteHelper(context);
@@ -32,7 +32,7 @@ public class chatEntryDataSource {
         chatdbHelper.close();
     }
 
-    public chatDbEntry createChatEntry(Long CHAT_ID,String CHAT_SENDER_ID,String CHAT_RECIEVER_ID,String CHAT_MESSAGE, String CHAT_READ, String CHAT_DATE, String CHAT_ISSEND, String CHAT_AESKEY) {
+    public chatDbEntry createChatEntry(Long CHAT_ID,String CHAT_SENDER_ID,String CHAT_RECIEVER_ID,String CHAT_MESSAGE, String CHAT_READ, String CHAT_DATE, String CHAT_ISSEND, String CHAT_AESKEY, String CHAT_SIGNATURE) {
         ContentValues values = new ContentValues();
         values.put(SQLiteHelper.COLUMN_CHAT_ID, CHAT_ID);
         values.put(SQLiteHelper.COLUMN_CHAT_SENDER_ID, CHAT_SENDER_ID);
@@ -42,6 +42,7 @@ public class chatEntryDataSource {
         values.put(SQLiteHelper.COLUMN_CHAT_DATE, CHAT_DATE);
         values.put(SQLiteHelper.COLUMN_CHAT_ISSEND, CHAT_ISSEND);
         values.put(SQLiteHelper.COLUMN_CHAT_AESKEY, CHAT_AESKEY);
+        values.put(SQLiteHelper.COLUMN_CHAT_SIGNATURE, CHAT_SIGNATURE);
 
         long insertId = chatdatabase.insert(SQLiteHelper.TABLE_CHAT, null, values);
         Cursor cursor = chatdatabase.query(SQLiteHelper.TABLE_CHAT, allColumnsChat,SQLiteHelper.COLUMN_CHATID + " = " + insertId, null, null, null, null, null);
@@ -66,6 +67,7 @@ public class chatEntryDataSource {
         entry.setCHAT_DATE(cursor.getString(6));
         entry.setCHAT_ISSEND(cursor.getString(7));
         entry.setCHAT_AESKEY(cursor.getString(8));
+        entry.setCHAT_SIGNATURE(cursor.getString(9));
         return entry;
     }
 }

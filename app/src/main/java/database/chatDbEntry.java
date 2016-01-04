@@ -11,6 +11,7 @@ public class chatDbEntry {
     private String CHAT_DATE;
     private String CHAT_ISSEND;
     private String CHAT_AESKEY;
+    private String CHAT_SIGNATURE;
 
     public long getId() {
         return id;
@@ -83,5 +84,14 @@ public class chatDbEntry {
     public void setCHAT_AESKEY(String CHAT_AESKEY) {
         this.CHAT_AESKEY = CHAT_AESKEY;
     }
+
+    public String getCHAT_SIGNATURE() {
+        return CHAT_SIGNATURE;
+    }
+
+    public void setCHAT_SIGNATURE(String CHAT_SIGNATURE) {
+        this.CHAT_SIGNATURE = CHAT_SIGNATURE;
+    }
+
 
 }

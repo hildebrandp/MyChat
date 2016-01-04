@@ -9,8 +9,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -32,16 +30,9 @@ import java.util.List;
 import java.util.Random;
 import crypto.Crypto;
 import crypto.RSA;
-import recivekey.Bluetooth;
-import recivekey.NFC;
-import recivekey.enterkey;
 
-public class NewKey_activity extends AppCompatActivity implements View.OnClickListener{
 
-    private Button createkey;
-    private Button enterKey;
-    private Button recievebluetooth;
-    private Button recievenfc;
+public class NewKey_activity extends AppCompatActivity {
 
     private String resp;
     private String result = "false";
@@ -55,15 +46,7 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_newkey);
 
-        createkey = (Button)findViewById(R.id.btncreatenewkey);
-        enterKey = (Button)findViewById(R.id.btnrevieveenter);
-        recievebluetooth = (Button)findViewById(R.id.btnrevievebluetooth);
-        recievenfc = (Button)findViewById(R.id.btnrevievenfc);
-
-        createkey.setOnClickListener(this);
-        enterKey.setOnClickListener(this);
-        recievebluetooth.setOnClickListener(this);
-        recievenfc.setOnClickListener(this);
+        new createKey().execute();
     }
 
     @Override
@@ -91,39 +74,6 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
 
         }
     }//onActivityResult
-
-
-    @Override
-    public void onClick(View v) {
-
-        switch(v.getId()) {
-            case R.id.btncreatenewkey:
-
-                    createkey.setClickable(false);
-                    enterKey.setClickable(false);
-                    recievebluetooth.setClickable(false);
-                    recievenfc.setClickable(false);
-
-                    new createKey().execute();
-
-                break;
-            case R.id.btnrevieveenter:
-
-                    Intent intent1 = new Intent(this, enterkey.class);
-                    startActivityForResult(intent1, 1);
-                break;
-            case R.id.btnrevievebluetooth:
-
-                    Intent intent2 = new Intent(this, Bluetooth.class);
-                    startActivityForResult(intent2, 1);
-                break;
-            case R.id.btnrevievenfc:
-
-                    Intent intent3 = new Intent(this, NFC.class);
-                    startActivityForResult(intent3, 1);
-                break;
-        }
-    }
 
     public static String random() {
         SecureRandom srand = new SecureRandom();
@@ -273,24 +223,17 @@ public class NewKey_activity extends AppCompatActivity implements View.OnClickLi
                             Main_activity.editor.commit();
 
                             revokekeywindow();
+
                         }else{
 
                             Toast.makeText(getApplicationContext(), "Key update fail" , Toast.LENGTH_LONG).show();
 
-                            createkey.setClickable(true);
-                            enterKey.setClickable(true);
-                            recievebluetooth.setClickable(true);
-                            recievenfc.setClickable(true);
                         }
 
                     }else {
 
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
 
-                        createkey.setClickable(true);
-                        enterKey.setClickable(true);
-                        recievebluetooth.setClickable(true);
-                        recievenfc.setClickable(true);
                     }
                 }
             });

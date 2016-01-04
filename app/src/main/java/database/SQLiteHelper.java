@@ -19,6 +19,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CHAT_DATE = "CHAT_DATE";
     public static final String COLUMN_CHAT_ISSEND = "CHAT_ISSEND";
     public static final String COLUMN_CHAT_AESKEY = "CHAT_AESKEY";
+    public static final String COLUMN_CHAT_SIGNATURE = "CHAT_SIGNATURE";
 
     public static final String TABLE_USER = "userlist";
     public static final String COLUMN_USER_ID = "USER_ID";
@@ -36,10 +37,11 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + " text not null, " + COLUMN_CHAT_ID
             + " text not null, " + COLUMN_CHAT_RECIEVER_ID
             + " text not null, " + COLUMN_CHAT_MESSAGE
+            + " VARCHAR(4096), " + COLUMN_CHAT_SIGNATURE
             + " VARCHAR(4096), " + COLUMN_CHAT_READ
             + " text not null, " + COLUMN_CHAT_DATE
             + " text not null, " + COLUMN_CHAT_AESKEY
-            + " VARCHAR(256),  " + COLUMN_CHAT_ISSEND
+            + " VARCHAR(4096),  " + COLUMN_CHAT_ISSEND
             + " text not null);";
 
     private static final String DATABASE_CREATE_USER = "create table "
@@ -62,9 +64,13 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         database.execSQL(DATABASE_CREATE_USER);
     }
 
-    public static void cleanTable(SQLiteDatabase database){
-        database.execSQL("DROP TABLE IF EXISTS " + TABLE_CHAT);
+    public static void cleanTableUser(SQLiteDatabase database){
         database.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
+        create(database);
+    }
+
+    public static void cleanTableChat(SQLiteDatabase database){
+        database.execSQL("DROP TABLE IF EXISTS " + TABLE_CHAT);
         create(database);
     }
 

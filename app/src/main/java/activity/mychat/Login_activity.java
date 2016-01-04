@@ -3,6 +3,7 @@ package activity.mychat;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import crypto.Crypto;
+import database.SQLiteHelper;
 
 public class Login_activity extends AppCompatActivity {
 
@@ -48,7 +50,7 @@ public class Login_activity extends AppCompatActivity {
     public static SharedPreferences user;
     public static SharedPreferences.Editor editor;
     private boolean doubleBackToExitPressedOnce = false;
-    private String encryptedKey;
+    public static SQLiteDatabase newDB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +59,9 @@ public class Login_activity extends AppCompatActivity {
 
         user = getSharedPreferences("myapplab.securechat", MODE_PRIVATE);
         editor = user.edit();
+
+        SQLiteHelper dbHelper = new SQLiteHelper(this);
+        newDB = dbHelper.getWritableDatabase();
 
         username = (EditText)findViewById(R.id.loginusername);
         password = (EditText)findViewById(R.id.loginpassword);
@@ -241,6 +246,14 @@ public class Login_activity extends AppCompatActivity {
                     }else if(splitResult[0].equals("login_true")){
 
                         Toast.makeText(getApplicationContext(), "Login Successful", Toast.LENGTH_LONG).show();
+
+                        if(!user.getString("USER_ID", "Ad").equals(splitResult[1])){
+                            editor.clear();
+                            editor.commit();
+
+                            SQLiteHelper.cleanTableChat(newDB);
+                            SQLiteHelper.cleanTableUser(newDB);
+                        }
 
                         editor.putString("USER_ID", splitResult[1]);
                         editor.putString("USER_NAME", splitResult[2]);

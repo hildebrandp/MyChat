@@ -1,4 +1,4 @@
-package activity.mychat;
+package items;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -10,6 +10,10 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import java.util.List;
+
+import activity.mychat.Main_activity;
+import activity.mychat.R;
+import items.Message;
 
 public class MessagesListAdapter extends BaseAdapter {
 

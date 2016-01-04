@@ -71,11 +71,9 @@ public class Background_Service extends Service {
 
         user = getSharedPreferences("myapplab.securechat", MODE_PRIVATE);
 
+        //Open Database
         SQLiteHelper dbHelper = new SQLiteHelper(this);
         newDB = dbHelper.getWritableDatabase();
-
-        //Toast.makeText(this, "Service Gestartet", Toast.LENGTH_LONG).show();
-
         datasourceChat = new chatEntryDataSource(this);
         datasourceChat.open();
         datasourceUser = new userEntryDataSource(this);
@@ -86,11 +84,28 @@ public class Background_Service extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
+        //Start Timer with Period time 10 Seconds
         startTimer(10000);
 
         return START_STICKY;
     }
 
+    //Start Timer and if it runs restart it
+    public void startTimer(int time){
+        //Timer initialize
+        if(mTimer1 != null) {
+            mTimer1.cancel();
+            mTimer1 = new Timer();
+        } else {
+            // recreate new
+            mTimer1 = new Timer();
+        }
+
+        //Start Timer in 1 sec and with a period time 10 seconds
+        mTimer1.scheduleAtFixedRate(new readmessages(), 1000, time);
+    }
+
+    //Timer Class which starts the Async Task
     class readmessages extends TimerTask {
 
         @Override
@@ -108,25 +123,14 @@ public class Background_Service extends Service {
         }
     }
 
-    public void startTimer(int time){
-        //Timer initialize
-        if(mTimer1 != null) {
-            mTimer1.cancel();
-            mTimer1 = new Timer();
-        } else {
-            // recreate new
-            mTimer1 = new Timer();
-        }
-
-        mTimer1.scheduleAtFixedRate(new readmessages(), 1000, time);
-    }
-
+    //Binder Service
     public class MyBinder extends Binder {
         Background_Service getService() {
             return Background_Service.this;
         }
     }
 
+    //Display a Notification when a new Message arrives
     protected void displayNotification() {
         Intent intent = new Intent(getApplicationContext(), Login_activity.class);
 
@@ -146,24 +150,28 @@ public class Background_Service extends Service {
 
     }
 
+    //Send Broadcast to Main Activity and Chat Activity when a new Message recieved
     private void publishResults(String result) {
         Intent intent = new Intent(NOTIFICATION_CHAT);
         intent.putExtra("RESULT", result);
         sendBroadcast(intent);
     }
 
+    //Send Broadcast to Main Activity and Chat Activity when a Message from a new User recived
     private void publishNewUser() {
         Intent intent = new Intent(NOTIFICATION_USER);
         intent.putExtra("RESULT", "TRUE");
         sendBroadcast(intent);
     }
 
+    //Stop timer when Activity will be destroyed
     @Override
     public void onDestroy() {
         super.onDestroy();
         mTimer1.cancel();
     }
 
+    //Asynchrone Task for recieving Messages
     private class recieveMessage extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -174,7 +182,7 @@ public class Background_Service extends Service {
         }
 
         protected void onPostExecute(Double result){
-            //Toast.makeText(getApplicationContext(), "command sent", Toast.LENGTH_LONG).show();
+
         }
         protected void onProgressUpdate(Integer... progress){
         }
@@ -188,7 +196,7 @@ public class Background_Service extends Service {
 
             try {
 
-                // Add your data
+                // Add Data which will be send to the Server
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
@@ -224,8 +232,8 @@ public class Background_Service extends Service {
                 // TODO Auto-generated catch block
             }
 
+                    //Separate the message at ">>"
                     String[] splitResult = String.valueOf(resp).split(">>");
-
 
                     if (splitResult[0].equals("login_false")) {
 
@@ -234,8 +242,6 @@ public class Background_Service extends Service {
 
                         //No Messages
                     } else if(splitResult[0].equals("newmessage")){
-
-                        //displayNotification();
 
                         for(int i=1;i < splitResult.length ;i++){
 
@@ -260,9 +266,7 @@ public class Background_Service extends Service {
                                     new addcontact().execute(data[0]);
                                 }
 
-
-                            String[] splitmessage = String.valueOf(splitResult2[2]).split("---Message-Break---");
-                            datasourceChat.createChatEntry(sender, splitResult2[0], reciever, splitmessage[0] , "false", splitResult2[1], "true", splitmessage[1]);
+                            datasourceChat.createChatEntry(sender, splitResult2[0], reciever, splitResult2[2] , "false", splitResult2[1], "true", splitResult2[3], splitResult2[4]);
 
 
                             c.close();
@@ -343,7 +347,7 @@ public class Background_Service extends Service {
                             try {
 
                                 Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
-                                Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "");
+                                Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]), Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "","");
 
                             }finally {
 
