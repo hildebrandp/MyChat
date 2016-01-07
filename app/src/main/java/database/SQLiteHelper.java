@@ -10,7 +10,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
 
     public static final String TABLE_CHAT = "chatlist";
-    public static final String COLUMN_CHATID = "CHATID";
     public static final String COLUMN_CHAT_ID = "CHAT_ID";
     public static final String COLUMN_CHAT_SENDER_ID = "CHAT_SENDER_ID";
     public static final String COLUMN_CHAT_RECIEVER_ID = "CHAT_RECIEVER_ID";
@@ -32,9 +31,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     // Database creation sql statement
     private static final String DATABASE_CREATE_CHAT = "create table "
-            + TABLE_CHAT + " ( " +  COLUMN_CHATID
-            + " integer primary key autoincrement, " + COLUMN_CHAT_SENDER_ID
-            + " text not null, " + COLUMN_CHAT_ID
+            + TABLE_CHAT + " ( " +  COLUMN_CHAT_ID
+            + " integer      , " + COLUMN_CHAT_SENDER_ID
             + " text not null, " + COLUMN_CHAT_RECIEVER_ID
             + " text not null, " + COLUMN_CHAT_MESSAGE
             + " VARCHAR(4096), " + COLUMN_CHAT_SIGNATURE

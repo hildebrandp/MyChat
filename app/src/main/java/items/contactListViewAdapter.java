@@ -22,7 +22,7 @@ public class contactListViewAdapter extends ArrayAdapter<contactItem> {
     /*private view holder class*/
     private class ViewHolder {
         TextView txtName;
-        TextView txtDate;
+        TextView txtNumbermessages;
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
@@ -35,13 +35,13 @@ public class contactListViewAdapter extends ArrayAdapter<contactItem> {
             convertView = mInflater.inflate(R.layout.contact_item, null);
             holder = new ViewHolder();
             holder.txtName = (TextView) convertView.findViewById(R.id.txtitemusername);
-            holder.txtDate = (TextView) convertView.findViewById(R.id.txtitemuserdate);
+            holder.txtNumbermessages = (TextView) convertView.findViewById(R.id.txtitemusernumbermessages);
             convertView.setTag(holder);
         } else
             holder = (ViewHolder) convertView.getTag();
 
         holder.txtName.setText(rowItem.getName());
-        holder.txtDate.setText(rowItem.getDate());
+        holder.txtNumbermessages.setText(rowItem.getNumbermessages());
 
         return convertView;
     }

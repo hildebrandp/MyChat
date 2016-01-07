@@ -3,7 +3,6 @@ package database;
 
 public class chatDbEntry {
     private long id;
-    private long CHAT_ID;
     private String CHAT_SENDER_ID;
     private String CHAT_RECIEVER_ID;
     private String CHAT_MESSAGE;
@@ -19,14 +18,6 @@ public class chatDbEntry {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public long getCHAT_ID() {
-        return CHAT_ID;
-    }
-
-    public void setCHAT_ID(long id) {
-        this.CHAT_ID = id;
     }
 
     public String getCHAT_SENDER_ID() {

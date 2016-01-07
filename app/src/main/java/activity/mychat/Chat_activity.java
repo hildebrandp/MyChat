@@ -4,6 +4,7 @@ import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -51,7 +52,6 @@ import java.util.Random;
 import crypto.AESHelper;
 import crypto.Crypto;
 import crypto.RSA;
-import crypto.SignatureUtils;
 import database.SQLiteHelper;
 import items.Message;
 import items.MessagesListAdapter;
@@ -59,8 +59,9 @@ import items.MessagesListAdapter;
 
 public class Chat_activity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
 
-    ActionBarDrawerToggle drawerToggle;
+    private ActionBarDrawerToggle drawerToggle;
 
+    //Array fürs Speichern der Nachrichten mit den zugehörigen Daten
     private ArrayList<String> chatMessage = new ArrayList<String>();
     private ArrayList<String> chatDate = new ArrayList<String>();
     private ArrayList<String> chatVerified = new ArrayList<String>();
@@ -68,9 +69,11 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private ArrayList<String> chatAESKey = new ArrayList<String>();
     private ArrayList<String> chatSignature = new ArrayList<String>();
 
+    //Message Item in dem alle Daten der Nachricht gespeichert werden
     private List<Message> messageItems;
     private MessagesListAdapter mAdapter;
 
+    //Textfelder für das Anzeigen und Senden der Nachrichten
     private ListView chatlist;
     private EditText texttosend;
     private Button btnsend;
@@ -80,9 +83,11 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private Long userid;
     private String username;
 
+    //Feld für den Notification Manager
     private NotificationManager mNotificationManager;
+    //Zeichen die erlaubt sind für die Random Funktion
     private static char[] VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456879".toCharArray();
-
+    //Datenbank Objekt
     public static SQLiteDatabase newDB;
 
     //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
@@ -121,10 +126,12 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         SQLiteHelper dbHelper = new SQLiteHelper(this);
         newDB = dbHelper.getWritableDatabase();
 
+        //Objekt für die Tollbar
         Toolbar toolbar1 = (Toolbar) findViewById(R.id.toolbar1);
         setSupportActionBar(toolbar1);
         getSupportActionBar().setTitle(username);
 
+        //Objekt für das DrawerLayout
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar1, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -134,25 +141,26 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-
+        //OnClickListener für den Senden Button
         btnsend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!texttosend.getText().toString().equals("")) {
+                    //Wenn das Textfeld mit dem zusendendem Text nicht leer ist wird die Nachricht an die Methode weitergeleitet, die diese dann Verschlüsselt
                     encryptMessage(texttosend.getText().toString());
                 }
             }
         });
 
-
-        Bundle b = getIntent().getExtras();
-
+            //hole die übergebenen Daten aus dem Bundle
+            Bundle b = getIntent().getExtras();
             if(b != null){
                 userid = b.getLong("userid");
             }else{
                 userid = 0L;
             }
 
+        //Falls der Service läuft beende diesen und starte ihn neu
         if(isMyServiceRunning(Background_Service.class.getName())){
 
             stopService(new Intent(getBaseContext(), Background_Service.class));
@@ -162,10 +170,12 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         intent.putExtra("Time", 10000);
         startService(intent);
 
+        //Datenbank öffnen und Anzeigen
         openAndQueryDatabase();
         displayResultList();
     }
 
+    //Methode die prüft ob der Service am laufen ist
     private boolean isMyServiceRunning(String className) {
         ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -176,9 +186,11 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         return false;
     }
 
+    //Methode zum öffnen der Datenbank. Es werden alle Nachrichten im ListView gespeichert
     private void openAndQueryDatabase(){
         try {
 
+            //Alle Daten in den Array löschen
             chatListView.removeAllViewsInLayout();
             chatMessage.clear();
             chatVerified.clear();
@@ -190,6 +202,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             String[] data = new String[1];
             data[0] = Long.toString(userid);
 
+            //Suche nach allen Nachrichten von dem User dessen Chat hier geöffnet wurde
             String selectSearch = "SELECT * " +
                     "FROM chatlist " +
                     "WHERE CHAT_ID = ? " +
@@ -197,27 +210,31 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
             Cursor c = Main_activity.newDB.rawQuery(selectSearch, data);
 
-            //"ON user.USER_ID = chat.CHAT_ID " +
-            //"ORDER BY chat.CHAT_DATE DESC ", null);
+            //Makiere die emfangenen Nachrichten als gelesen
+            ContentValues newval=new ContentValues();
+            newval.put("CHAT_READ", "true");
+            String[] args={Long.toString(userid)};
+
+            Main_activity.newDB.update("chatlist", newval, "CHAT_ID = ?", args);
+
+
+            //Speichere alle ausgelesenen Daten in den Arrays
             if (c != null ) {
                 if  (c.moveToFirst()) {
                     do {
+
                         String tmpchatMessage = c.getString(c.getColumnIndex("CHAT_MESSAGE"));
+                        String tmpchatDate  = c.getString(c.getColumnIndex("CHAT_DATE"));
+                        String tmpchatsender = c.getString(c.getColumnIndex("CHAT_SENDER_ID"));
+                        String tmpchatAESKey = c.getString(c.getColumnIndex("CHAT_AESKEY"));
+                        String tmpSignature = c.getString(c.getColumnIndex("CHAT_SIGNATURE"));
 
-                            if(tmpchatMessage.length() > 0){
+                        chatDate.add(tmpchatDate);
+                        chatMessage.add(tmpchatMessage);
+                        chatSender.add(tmpchatsender);
+                        chatAESKey.add(tmpchatAESKey);
+                        chatSignature.add(tmpSignature);
 
-                                String tmpchatDate  = c.getString(c.getColumnIndex("CHAT_DATE"));
-                                String tmpchatsender = c.getString(c.getColumnIndex("CHAT_SENDER_ID"));
-                                String tmpchatAESKey = c.getString(c.getColumnIndex("CHAT_AESKEY"));
-                                String tmpSignature = c.getString(c.getColumnIndex("CHAT_SIGNATURE"));
-
-                                chatDate.add(tmpchatDate);
-                                chatMessage.add(tmpchatMessage);
-                                chatVerified.add("false");
-                                chatSender.add(tmpchatsender);
-                                chatAESKey.add(tmpchatAESKey);
-                                chatSignature.add(tmpSignature);
-                            }
 
                     }while (c.moveToNext());
                 }
@@ -238,6 +255,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         }
     }
 
+    //Methode zum Anzeigen der aus der Datenbak ausgelesenen Nachrichten
     private void displayResultList() {
 
         messageItems = new ArrayList<Message>();
@@ -249,94 +267,126 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
             if(i == 0){
 
+                //Falls es die erste Nachricht ist zeige "Chat Created" an
                 tmpmessage = "Chat Created";
             }else {
 
+                //Entschlüssele die Nachricht
                 tmpmessage = decryptMessage(chatMessage.get(i), i);
-                tmpSignature = ""+checkSignature(chatSignature.get(i), tmpmessage, chatSender.get(i));
+
+                if(chatSignature.get(i).length() > 0){
+
+                    //Überprüfe die Signatur der Nachricht
+                    tmpSignature = ""+checkSignature(chatSignature.get(i), tmpmessage, chatMessage.get(i));
+
+                }else{
+
+                    //Keine Signatur vorhanden
+                    tmpSignature = "false";
+                }
 
                 if(tmpmessage.length() == 0){
 
+                    //Nachricht konnte nicht Entschlüsselt werden
                     tmpmessage = "System:Can´t Decrypt";
                 }
             }
 
+            //Speichere die Entschlüsselte Nachricht in einem Message Item
             Message item = new Message(chatDate.get(i), tmpmessage, tmpSignature, chatSender.get(i));
             messageItems.add(item);
         }
 
+        //Speichere die Message Items in einem ListView
         mAdapter = new MessagesListAdapter(this, messageItems);
         chatListView.setAdapter(mAdapter);
     }
 
-    private Boolean checkSignature(String signature, String message, String id){
+    //Methode zum Überprüfen der Signatur der Nachricht
+    private Boolean checkSignature(String signature, String decmessage, String encmessage){
 
-        boolean isValid;
-        String pubkey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
+        String newsig = "";
 
-            if(id != pubkey){
+        //Wenn die entschlüsselte und die verschlüsselte Nachricht ungleich null ist überprüfe sie Signatur
+        if(decmessage != null && encmessage != null){
 
-                pubkey = getPublicKey();
+            newsig = Crypto.hashpassword(encmessage, decmessage);
+        }
+
+            //Wenn Signatur Stimmt gib true zurück und wenn sie falsch ist gib false zurück
+            if(signature.equals(newsig)){
+
+                return true;
+            }else{
+
+                return false;
             }
-
-        isValid = SignatureUtils.checkSignature(signature, message, pubkey);
-
-        return isValid;
     }
 
+    //Methode zum Entschlüsseln der Nachrichten
     private String decryptMessage(String message,int pos){
         String decryptedMessage = "";
 
+            //Entschlüssel den AES Schlüssel mit dem Privaten RSA Schlüssel
             String decryptedKey = RSA.decryptWithStoredKey(chatAESKey.get(pos));
 
             try {
+                //Entschlüssel die Nachricht mit dem AES Schlüssel
                 decryptedMessage = AESHelper.decrypt(decryptedKey, message);
 
             }catch (Exception e){
                 e.printStackTrace();
             }
 
+        //Gib die Entschlüsselte Nachricht zurück
         return decryptedMessage;
     }
 
+    //Methode zum Verschlüsseln der Nachrichten
     private void encryptMessage(String message){
 
+            //Hole den Public Key des Empfängers
             String key = getPublicKey();
+            //Erstelle Seed für AES Verschlüsselung
             String rand = random();
 
-            String tmpmessage=null;
             String encryptedkey;
             String privateencrypt;
             String encryptedmessage=null;
 
+            //Erstelle Date Format und hole Aktuelle System Zeit
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String currentDateandTime = sdf.format(Calendar.getInstance().getTime());
 
                 try {
-
+                    //Verschlüssele die Nachricht mit AES und der vorher erstellten Seed
                     encryptedmessage = AESHelper.encrypt(rand, message);
                 }catch (Exception e) {
                     e.printStackTrace();
                 }
 
+            //Verschlüssel den AES Schlüssel mit dem Public Key des Empfängers
             encryptedkey = RSA.encryptWithKey(key, rand);
+            //Verschlüssel den AES Schlüssel mit dem eigenen Public Key für die eigene Datenbank
             privateencrypt = RSA.encryptWithStoredKey(rand);
+            //Erstelle eine Signatur der Verschlüsselten Nachricht und nutze die unverschlüsselte Nachricht als Seed
+            String signature = Crypto.hashpassword(encryptedmessage, message);
 
-            String signature = SignatureUtils.genSignature(message);
-
-
-
+            //Sende Nachricht an den Server
             new sendMessage().execute(encryptedmessage, currentDateandTime, encryptedkey, signature);
 
-            Main_activity.datasourceChat.createChatEntry(userid, Main_activity.user.getString("USER_ID", "0"), Long.toString(userid), tmpmessage, "true", currentDateandTime, "true", privateencrypt, signature);
+            //Speichere die Nachricht in der Datennak mit "privatencrypt", damit man die gesendeten Nachrichten auch wieder entschlüsseln kann
+            Main_activity.datasourceChat.createChatEntry(userid, Main_activity.user.getString("USER_ID", "0"), Long.toString(userid), encryptedmessage, "true", currentDateandTime, "true", privateencrypt, signature);
 
             texttosend.setText("");
+            rand = "";
 
+            //Aktualisiere die Datenbank und das ListView
             openAndQueryDatabase();
             displayResultList();
-
     }
 
+    //Methode um den Public Key des Empfängers aus der Datenbank zu holen
     private String getPublicKey(){
 
         String[] data = new String[1];
@@ -364,6 +414,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         }
     }
 
+    //Methode falls der Empfänger keinen Public Key hat zeige Alert Dialog
     private void noKey(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -383,21 +434,23 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
+    //Methode zum erstellen eines Zufälligen Strings für die AES Verschlüsselung
     public static String random() {
         SecureRandom srand = new SecureRandom();
         Random rand = new Random();
         char[] buff = new char[128];
 
-        for (int i = 0; i < 128; ++i) {
-            // reseed rand once you've used up all available entropy bits
+        for (int i = 0; i < 192; ++i) {
+
             if ((i % 10) == 0) {
-                rand.setSeed(srand.nextLong()); // 64 bits of random!
+                rand.setSeed(srand.nextLong());
             }
             buff[i] = VALID_CHARACTERS[rand.nextInt(VALID_CHARACTERS.length)];
         }
         return new String(buff);
     }
 
+    //Methode für das Navigation Layout
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -448,6 +501,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         return super.onOptionsItemSelected(item);
     }
 
+    //Wenn der Nutzer seinen Key zurückziehen will muss er seinen Revoke Key eingeben. Dafür Wird ein Alert Dialog angezeigt
     private void revokekey(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -476,6 +530,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
+    //Wenn der Nutzer sich ausloggt werden alle seine Daten Gelöscht
     private void logout(){
 
         AlertDialog.Builder msgBox = new AlertDialog.Builder(this);
@@ -509,6 +564,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         alertDialog.show();
     }
 
+    //Methode die das Login Fenster öffnet
     private void openlogin(){
 
         Intent i = new Intent(this, Login_activity.class);
@@ -516,6 +572,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         finish();
     }
 
+    //Alert Dialog wo man einen Namen eingeben kann nach dem man suchen will
     private void searchforuser(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -550,6 +607,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
+    //Überprüfe ob der Nutzer schon in der eigenen Datenbank vorhanden ist
     private void checkifuserexists(String name){
 
         String[] data = new String[1];
@@ -564,6 +622,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         int count = c.getCount();
         if (count == 0) {
 
+            //Name nicht in der Datenbank vorhanden, daher wird auf dem Server nach dem Nutzer gesucht
             new searchcontact().execute(name,"false");
         }else{
             Toast.makeText(getApplicationContext(), "User already exist", Toast.LENGTH_LONG).show();
@@ -571,11 +630,14 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         c.close();
     }
 
+    //Öffne Fenster um neuen Key zu erstellen
     private void createnewkey(){
         Intent i = new Intent(this, NewKey_activity.class);
         startActivityForResult(i, 1);
     }
 
+    //Methode falls der eigene Public Key nicht mit dem Public Key auf dem Server übereinstimmt
+    //Nutzer muss Revoke Key eingeben oder er wird Ausgeloggt
     private void differentkey(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -611,6 +673,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
+    //Methode um dem Account zu löschen
     private void deleteAccount(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -641,6 +704,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
+    //OnResume Methode die überprüft ob die Daten des Nutzers mit denen auf dem Server überprüft
+    //und den Broadcast Reciever startet, der die Daten von neuen Nachrichten Empfängt
     @Override
     protected void onResume() {
         super.onResume();
@@ -650,12 +715,14 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         registerReceiver(receiver, new IntentFilter(Background_Service.NOTIFICATION_CHAT));
     }
 
+    //OnPause Methode die den Broadcast Reciever Stopt
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(receiver);
     }
 
+    //Asynchroner Task um den Public Key zurückzuziehen
     private class revokekey extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -722,6 +789,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                     if(splitResult[0].equals("login_false")) {
 
+                        //Login nicht erfolgreich daher wird das Login Fenster geöffnet
                         Toast.makeText(getApplicationContext(), "Login not Successful", Toast.LENGTH_LONG).show();
                         openlogin();
 
@@ -733,6 +801,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                             if(splitResult[2].equals("delete_true")) {
 
+                                //Login erfolgreich, Daten werden im Mobiltelefon gelöscht und Fenster um neuen Key zu erstellen wird geöffnet
                                 Main_activity.editor.putString("RSA_PUBLIC_KEY", "");
                                 Main_activity.editor.putString("RSA_PRIVATE_KEY", "");
                                 Main_activity.editor.putBoolean("key", false);
@@ -744,14 +813,17 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                         }else{
 
+                            //Revoke Key falsch
                             Toast.makeText(getApplicationContext(), "Revoke Key false", Toast.LENGTH_LONG).show();
                             differentkey();
                         }
 
 
                     }else {
-
+                        //Es konnte keine Verbindung zu dem Server aufgebaut werden
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
                     }
                 }
             });
@@ -761,6 +833,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
     }
 
+    //Asynchroner Task um Online zu Prüfen ob der Nutzer vorhanden ist nachdem gesucht wurde
     private class searchcontact extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -832,6 +905,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                             if (checkkey.equals("false")) {
                                 try {
 
+                                    //Erstelle für den Nutzer einen Eintrag in in der Nutzer und Nachrichten Datenbank
                                     Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
                                     Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "","");
 
@@ -842,6 +916,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                             } else if (checkkey.equals("true")){
 
+                                //Hole Public Key aus der Datenbank
                                 String[] data = new String[1];
                                 data[0] = Long.toString(userid);
 
@@ -860,6 +935,9 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                                 }
 
                                 if(!tmpkey.equals(splitResult[3])){
+                                    //Wenn der Public Key von Server sich von dem Public Key aus der Eigenen Datenbank unterscheidet, akualisiere den Publick Key in der eigenen Datenbank und lösche
+                                    //alle bisherigen Nachrichten mit diesem Nutzer
+
                                     Main_activity.datasourceChat.deleteEntry(splitResult[1]);
 
                                     Main_activity.datasourceUser.deleteEntry(splitResult[1]);
@@ -870,6 +948,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                                     Toast.makeText(getApplicationContext(), "User has changed his Public Key", Toast.LENGTH_LONG).show();
                                 }else if(splitResult[3].equals("-") || splitResult[3].equals("---")){
 
+                                    //Wenn Nutzer keinen Public Key auf dem Server hat wird das eingabe Feld zum Senden vomn NAchrichten gesperrt
                                     Toast.makeText(getApplicationContext(), "User has no Public Key\nPlease try again later!", Toast.LENGTH_LONG).show();
                                     btnsend.setClickable(false);
                                     texttosend.setText("Can´t send Message!");
@@ -880,13 +959,16 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                             }
 
                         } else {
+                            //Nutzer nicht vorhanden
                             searchforuser();
                             Toast.makeText(getApplicationContext(), "No User", Toast.LENGTH_LONG).show();
                         }
 
                     } else {
-
-                        Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_LONG).show();
+                        //Es konnte keine Verbindung zu dem Server aufgebaut werden
+                        Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
                     }
                 }
             });
@@ -896,6 +978,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
     }
 
+    //Asynchroner Task zum Senden von Nachrichten
     private class sendMessage extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -928,7 +1011,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                 nameValuePairs.add(new BasicNameValuePair("encryptedkey", key));
                 nameValuePairs.add(new BasicNameValuePair("signature", signature));
                 nameValuePairs.add(new BasicNameValuePair("date", date));
-                nameValuePairs.add(new BasicNameValuePair("receiverid", Long.toString(userid)));
+                nameValuePairs.add(new BasicNameValuePair("recieverid", Long.toString(userid)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -967,20 +1050,22 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                     String[] splitResult = String.valueOf(resp).split("::");
 
                     if(splitResult[0].equals("login_false")) {
-
+                    //Login Daten Passen nicht, daher wird das Login Fenster geöffnet
                         openlogin();
                         finish();
 
                     }else if(splitResult[0].equals("login_true")){
 
                         if(splitResult[1].equals("message_send")){
-
+                            //Nachricht wurde erfolgreich gesendet
                             //Toast.makeText(getApplicationContext(), "Message Send" , Toast.LENGTH_LONG).show();
                         }
 
                     }else {
-
+                        //Es konnte keine Verbindung zu dem Server aufgebaut werden
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
                     }
                 }
             });
@@ -990,6 +1075,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
     }
 
+    //Asynchroner Taskzum löschen des Accounts
     private class deleteAccount extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -1059,10 +1145,14 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
                     if(splitResult[0].equals("login_false")) {
 
-                        Toast.makeText(getApplicationContext(), "Delete Error" , Toast.LENGTH_LONG).show();
+                        //Login Daten sind Falsch
+                        Toast.makeText(getApplicationContext(), "Login not Successful" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
 
                     }else if(splitResult[0].equals("login_true")){
 
+                        //Löschen Erfolgreich. Daten auf dem Mobiltelefon werden gelöscht
                         Main_activity.editor.clear();
                         Main_activity.editor.commit();
 
@@ -1072,8 +1162,10 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                         openlogin();
 
                     }else {
-
+                        //Es konnte keine Verbindung zu dem Server aufgebaut werden
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
                     }
                 }
             });

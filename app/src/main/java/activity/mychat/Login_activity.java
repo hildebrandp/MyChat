@@ -174,12 +174,6 @@ public class Login_activity extends AppCompatActivity {
 
         protected Double doInBackground(String... params) {
 
-            if(!params[0].equals(user.getString("USER_NAME", ""))){
-
-                editor.clear();
-                editor.commit();
-            }
-
             postData(params[0],params[1]);
             return null;
         }
@@ -247,12 +241,13 @@ public class Login_activity extends AppCompatActivity {
 
                         Toast.makeText(getApplicationContext(), "Login Successful", Toast.LENGTH_LONG).show();
 
-                        if(!user.getString("USER_ID", "Ad").equals(splitResult[1])){
+                        if(!user.getString("USER_ID", "").equals(splitResult[1])){
                             editor.clear();
                             editor.commit();
 
-                            SQLiteHelper.cleanTableChat(newDB);
-                            SQLiteHelper.cleanTableUser(newDB);
+                            //SQLiteHelper.cleanTableChat(newDB);
+                            //SQLiteHelper.cleanTableUser(newDB);
+
                         }
 
                         editor.putString("USER_ID", splitResult[1]);

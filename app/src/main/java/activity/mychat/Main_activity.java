@@ -79,7 +79,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
     private ArrayList<Long> userID = new ArrayList<Long>();
     private ArrayList<String> userName = new ArrayList<String>();
-    private ArrayList<String> chatDate = new ArrayList<String>();
+    private ArrayList<String> chatMessages = new ArrayList<String>();
     private List<contactItem> contactItems;
 
     private NotificationManager mNotificationManager;
@@ -96,6 +96,20 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                     displayResultList();
                     chatListView.setClickable(true);
                 }
+            }
+        }
+    };
+
+    //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
+    private BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+
+                    mNotificationManager.cancel(0);
+                    openAndQueryDatabase();
+                    displayResultList();
             }
         }
     };
@@ -152,7 +166,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 chatListView.removeAllViewsInLayout();
                 userID.clear();
                 userName.clear();
-                chatDate.clear();
+                chatMessages.clear();
+
                 try {
 
                     String[] name = new String[1];
@@ -171,16 +186,24 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                             do {
                                 Long tmpid = c.getLong(c.getColumnIndex("USER_ID"));
                                 String tmpname = c.getString(c.getColumnIndex("USER_NAME"));
-                                String tmpdate = c.getString(c.getColumnIndex("CHAT_DATE"));
 
-                                if (tmpdate.equals("0")) {
-                                    chatDate.add("No Messages");
-                                } else {
-                                    chatDate.add(tmpdate);
+                                String[] id = new String[1];
+                                id[0] = Long.toString(tmpid);
+
+                                String unreadmessages = "SELECT COUNT(*) " +
+                                        "FROM chatlist " +
+                                        "WHERE chatlist.CHAT_ID = ? AND chatlist.CHAT_READ = 'false'";
+
+                                Cursor unreadmess = newDB.rawQuery(unreadmessages, id);
+                                unreadmess.moveToFirst();
+                                int count= unreadmess.getInt(0);
+                                unreadmess.close();
+
+                                if(!userName.contains(tmpname)){
+                                    chatMessages.add(""+count);
+                                    userID.add(tmpid);
+                                    userName.add(tmpname);
                                 }
-
-                                userID.add(tmpid);
-                                userName.add(tmpname);
 
                             } while (c.moveToNext());
                         }
@@ -215,7 +238,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             chatListView.removeAllViewsInLayout();
             userID.clear();
             userName.clear();
-            chatDate.clear();
+            chatMessages.clear();
 
             String selectQuery = "SELECT USER_ID,USER_NAME " +
                                  "FROM userlist " +
@@ -224,8 +247,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
             Cursor c = newDB.rawQuery(selectQuery, null);
 
-            //"ON user.USER_ID = chat.CHAT_ID " +
-            //"ORDER BY chat.CHAT_DATE DESC ", null);
+
             if (c != null ) {
                 if  (c.moveToFirst()) {
                     do {
@@ -239,18 +261,25 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                                 "ORDER BY CHAT_DATE DESC LIMIT 1";
 
                         Cursor c2 = newDB.rawQuery(selectchat, data);
-                        c2.moveToFirst();
 
                         Long tmpid = c.getLong(c.getColumnIndex("USER_ID"));
                         String tmpname  = c.getString(c.getColumnIndex("USER_NAME"));
-                        String tmpdate = c2.getString(c2.getColumnIndex("CHAT_DATE"));
 
-                            if(tmpdate.equals("0")){
-                                chatDate.add("No Messages");
-                            }else{
-                                chatDate.add(tmpdate);
-                            }
 
+
+                        String[] id = new String[2];
+                        id[0] = Long.toString(tmpid);
+                        id[1] = "false";
+
+                        String unreadmessages = "SELECT CHAT_READ,CHAT_ID " +
+                                "FROM chatlist " +
+                                "WHERE CHAT_ID = ? AND CHAT_READ = ? ";
+
+                        Cursor unreadmess = newDB.rawQuery(unreadmessages, id);
+                        int count= unreadmess.getCount();
+                        unreadmess.close();
+
+                        chatMessages.add(""+count);
                         userID.add(tmpid);
                         userName.add(tmpname);
 
@@ -282,12 +311,12 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         if(userID.size() == 0){
             userID.add(0L);
             userName.add("No User available");
-            chatDate.add("Please add user");
+            chatMessages.add("Please add user");
             chatListView.setClickable(false);
         }
 
         for (int i = 0; i < userID.size(); i++) {
-            contactItem item = new contactItem(userID.get(i),userName.get(i), chatDate.get(i));
+            contactItem item = new contactItem(userID.get(i),userName.get(i), chatMessages.get(i));
             contactItems.add(item);
         }
         contactListViewAdapter adapter1 = new contactListViewAdapter(this,R.layout.contact_item, contactItems);
@@ -437,9 +466,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 editor.putBoolean("login", false);
                 editor.commit();
 
-                SQLiteHelper.cleanTableChat(newDB);
-                SQLiteHelper.cleanTableUser(newDB);
-
                 openlogin();
             }
         });
@@ -494,8 +520,6 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             public void onClick(DialogInterface dialog, int which) {
                 editor.clear();
                 editor.commit();
-                SQLiteHelper.cleanTableChat(newDB);
-                SQLiteHelper.cleanTableUser(newDB);
 
                 openlogin();
             }
@@ -574,6 +598,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         mNotificationManager.cancel(0);
 
         registerReceiver(receiveruser, new IntentFilter(Background_Service.NOTIFICATION_USER));
+        registerReceiver(receiver, new IntentFilter(Background_Service.NOTIFICATION_CHAT));
 
         openAndQueryDatabase();
         displayResultList();
@@ -721,7 +746,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                                 editor.putString("RSA_PRIVATE_KEY", "");
                                 editor.putBoolean("key", false);
                                 editor.commit();
-                                SQLiteHelper.cleanTableChat(newDB);
+
+
                                 createnewkey();
 
                             }else {

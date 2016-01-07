@@ -5,12 +5,12 @@ public class contactItem {
 
     private long id;
     private String name;
-    private String date;
+    private String numbermessages;
 
-    public contactItem(long id, String name, String date) {
+    public contactItem(long id, String name, String numbermessages) {
         this.id = id;
         this.name = name;
-        this.date = date;
+        this.numbermessages = numbermessages;
     }
 
     public Long getID(){
@@ -24,14 +24,16 @@ public class contactItem {
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
 
-    public String getDate() {
-        return date;
+    public String getNumbermessages() {
+        return numbermessages;
     }
-    public void setDate(String date) {
-        this.date = date;
+
+    public void setNumbermessages(String numbermessages) {
+        this.numbermessages = numbermessages;
     }
 }

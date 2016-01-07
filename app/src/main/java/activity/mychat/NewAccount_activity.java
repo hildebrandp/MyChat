@@ -1,6 +1,7 @@
 package activity.mychat;
 
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import crypto.Crypto;
+import database.SQLiteHelper;
 
 
 public class NewAccount_activity extends AppCompatActivity{
@@ -57,6 +59,7 @@ public class NewAccount_activity extends AppCompatActivity{
 
                 if (checkinput()) {
 
+                    createAccount.setClickable(false);
                     new createnewaccount().execute(newUsername.getText().toString(), Crypto.hashpassword(newPassword1.getText().toString(), newUsername.getText().toString() ));
                 }
             }
@@ -186,6 +189,7 @@ public class NewAccount_activity extends AppCompatActivity{
 
                         Toast.makeText(getApplicationContext(), "User Name is already used", Toast.LENGTH_LONG).show();
                         newUsername.setText("");
+                        createAccount.setClickable(true);
 
                     }else if(splitResult[0].equals("insert_success")){
 
@@ -203,6 +207,7 @@ public class NewAccount_activity extends AppCompatActivity{
                     }else {
 
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        createAccount.setClickable(true);
                     }
                 }
             });
