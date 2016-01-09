@@ -1,14 +1,11 @@
 package crypto;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+
 import android.util.Base64;
 import android.util.Log;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -36,7 +33,7 @@ public class RSA {
         try {
             SecureRandom random = new SecureRandom();
             RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(KEY_SIZE, RSAKeyGenParameterSpec.F4);
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "SC");
             generator.initialize(spec, random);
             return generator.generateKeyPair();
         } catch (Exception e) {
@@ -47,7 +44,7 @@ public class RSA {
 
     public static byte[] encrypt(Key publicKey, byte[] toBeCiphred) {
         try {
-            Cipher rsaCipher = Cipher.getInstance("RSA");
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
             rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
             return rsaCipher.doFinal(toBeCiphred);
         } catch (Exception e) {
@@ -63,7 +60,7 @@ public class RSA {
 
     public static byte[] decrypt(Key privateKey, byte[] encryptedText) {
         try {
-            Cipher rsaCipher = Cipher.getInstance("RSA");
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
             rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
             return rsaCipher.doFinal(encryptedText);
         } catch (Exception e) {

@@ -48,6 +48,10 @@ public class userEntryDataSource {
         userdatabase.delete(SQLiteHelper.TABLE_USER, SQLiteHelper.COLUMN_USER_ID + " = " + id, null);
     }
 
+    public void deleteAllEntries(){
+        userdatabase.execSQL("DELETE FROM userlist");
+    }
+
     private userDbEntry cursorToEntry(Cursor cursor) {
         userDbEntry entry = new userDbEntry();
         entry.setUSER_ID(cursor.getString(0));

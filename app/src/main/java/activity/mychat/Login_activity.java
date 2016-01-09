@@ -245,8 +245,8 @@ public class Login_activity extends AppCompatActivity {
                             editor.clear();
                             editor.commit();
 
-                            //SQLiteHelper.cleanTableChat(newDB);
-                            //SQLiteHelper.cleanTableUser(newDB);
+                            Main_activity.datasourceChat.deleteAllEntries();
+                            Main_activity.datasourceUser.deleteAllEntries();
 
                         }
 

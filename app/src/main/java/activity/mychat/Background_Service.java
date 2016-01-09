@@ -357,6 +357,8 @@ public class Background_Service extends Service {
 
                             //Speichere Kontakt Daten in der Datenbank für die KOntakte
                             Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
+                            Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),
+                                    Main_activity.user.getString("USER_ID", "0"), splitResult[1], "Add User", "true", "0", "true", "", "");
 
                         } finally {
 

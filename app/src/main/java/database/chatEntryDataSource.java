@@ -53,7 +53,11 @@ public class chatEntryDataSource {
     }
 
     public void deleteEntry(String id) {
-        chatdatabase.delete(SQLiteHelper.TABLE_CHAT, SQLiteHelper.COLUMN_CHAT_SENDER_ID + " = " + id, null);
+        chatdatabase.delete(SQLiteHelper.TABLE_CHAT, SQLiteHelper.COLUMN_CHAT_ID + " = " + id, null);
+    }
+
+    public void deleteAllEntries(){
+        chatdatabase.execSQL("DELETE FROM chatlist");
     }
 
     private chatDbEntry cursorToEntry(Cursor cursor) {

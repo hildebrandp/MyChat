@@ -64,12 +64,12 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     public static void cleanTableUser(SQLiteDatabase database){
         database.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
-        create(database);
+        database.execSQL(DATABASE_CREATE_USER);
     }
 
     public static void cleanTableChat(SQLiteDatabase database){
         database.execSQL("DROP TABLE IF EXISTS " + TABLE_CHAT);
-        create(database);
+        database.execSQL(DATABASE_CREATE_CHAT);
     }
 
     @Override

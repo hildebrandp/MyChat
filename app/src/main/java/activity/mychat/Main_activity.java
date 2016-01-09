@@ -58,7 +58,8 @@ import items.contactItem;
 import items.contactListViewAdapter;
 
 
-public class Main_activity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
+public class Main_activity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener{
 
     public static SharedPreferences user;
     public static SharedPreferences.Editor editor;
@@ -100,7 +101,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         }
     };
 
-    //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
+    //Broadcast um das ListView zu Aktualisieren wenn Nachricht
+    //an diesen Emfänger empfangen wurde
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -118,6 +120,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Zeige Activity ohne Tastatur
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -229,6 +233,46 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 openChat(position);
             }
         });
+
+        chatListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+
+                deleteEntry(position);
+
+                return false;
+            }
+        });
+
+    }
+
+    private void deleteEntry(final int pos){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Secure Chat");
+        builder.setMessage("Delete User: " + userName.get(pos));
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                Main_activity.datasourceChat.deleteEntry("" + userID.get(pos));
+                Main_activity.datasourceUser.deleteEntry("" + userID.get(pos));
+
+                openAndQueryDatabase();
+                displayResultList();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+
 
     }
 
@@ -373,8 +417,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
     @Override
     public void onBackPressed() {
         if (doubleBackToExitPressedOnce) {
-            //Clean Ram!!!!
 
+            userpassword = null;
             newDB.close();
             super.onBackPressed();
             return;
@@ -462,9 +506,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         msgBox.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
 
-                editor.clear();
-                editor.putBoolean("login", false);
-                editor.commit();
+                revokekey();
 
                 openlogin();
             }
@@ -612,6 +654,12 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         unregisterReceiver(receiveruser);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        userpassword = "";
+    }
+
     private boolean isMyServiceRunning(String className) {
         ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -665,6 +713,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         return super.onOptionsItemSelected(item);
     }
 
+    //Asynchroner Task um den Public Key zurückzuziehen
     private class revokekey extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -691,7 +740,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
-                nameValuePairs.add(new BasicNameValuePair("userrevokekey", valueIWantToSend1));
+                nameValuePairs.add(new BasicNameValuePair("userrevokekey", Crypto.hashpassword(valueIWantToSend1, userpassword)));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -731,6 +780,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                     if(splitResult[0].equals("login_false")) {
 
+                        //Login nicht erfolgreich daher wird das Login Fenster geöffnet
                         Toast.makeText(getApplicationContext(), "Login not Successful", Toast.LENGTH_LONG).show();
                         openlogin();
 
@@ -742,29 +792,32 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                             if(splitResult[2].equals("delete_true")) {
 
+                                //Login erfolgreich, Daten werden im Mobiltelefon gelöscht und Fenster um neuen Key zu erstellen wird geöffnet
                                 editor.putString("RSA_PUBLIC_KEY", "");
                                 editor.putString("RSA_PRIVATE_KEY", "");
                                 editor.putBoolean("key", false);
                                 editor.commit();
 
+                                Main_activity.datasourceChat.deleteAllEntries();
 
                                 createnewkey();
-
                             }else {
-
                                 Toast.makeText(getApplicationContext(), "Error Please try again", Toast.LENGTH_LONG).show();
                             }
 
                         }else{
 
+                            //Revoke Key falsch
                             Toast.makeText(getApplicationContext(), "Revoke Key false", Toast.LENGTH_LONG).show();
                             differentkey();
                         }
 
 
                     }else {
-
+                        //Es konnte keine Verbindung zu dem Server aufgebaut werden
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
                     }
                 }
             });
@@ -774,6 +827,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
     }
 
+    //Asynchroner Task um Online zu Prüfen ob der Nutzer vorhanden ist nachdem gesucht wurde
     private class searchcontact extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -782,10 +836,11 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             return null;
         }
 
-        protected void onPostExecute(Double result){
+        protected void onPostExecute(Double result) {
             //Toast.makeText(getApplicationContext(), "command sent", Toast.LENGTH_LONG).show();
         }
-        protected void onProgressUpdate(Integer... progress){
+
+        protected void onProgressUpdate(Integer... progress) {
         }
 
         public void postData(String valueIWantToSend1) {
@@ -798,8 +853,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             try {
                 // Add your data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-                nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME","")));
-                nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
+                nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
+                nameValuePairs.add(new BasicNameValuePair("userpassword", Main_activity.user.getString("USER_PASSWORD", "")));
                 nameValuePairs.add(new BasicNameValuePair("usercontact", valueIWantToSend1));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -836,11 +891,16 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             runOnUiThread(new Runnable() {
                 public void run() {
 
+                    //Trenne den empfangenen String
                     String[] splitResult = String.valueOf(resp).split("::");
+
+                    //Überprüfe ob der Login erfolgreich war
                     if (splitResult[0].equals("login_true")) {
 
+                        //Überprüfe ob der Nutzer auch vorhanden ist
                         if (!splitResult[1].equals("no_user")) {
 
+                            //Nutzer vorhanden trage die Daten in der eigenen Datenbank ein
                             try {
                                 Main_activity.datasourceUser.createUserEntry(splitResult[1], splitResult[2], splitResult[3]);
                                 Main_activity.datasourceChat.createChatEntry(Long.parseLong(splitResult[1]),
@@ -850,6 +910,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                             }finally {
 
+                                //Neuer Butzer eingetragen. Akualisiere die Views
                                 chatListView.setClickable(true);
                                 openAndQueryDatabase();
                                 displayResultList();
@@ -857,6 +918,8 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
                             }
 
                         }else{
+
+                            //Nutzer nicht vorhanden
                             searchforuser();
                             Toast.makeText(getApplicationContext(), "No User" , Toast.LENGTH_LONG).show();
                         }
@@ -873,6 +936,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
     }
 
+    //Asynchroner Task zum überprüfen ob der eigene Public Key mit dem auf dem Server zusammen passt
     private class checkPublicKey extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -891,20 +955,20 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
         public void postData() {
 
 
-            // Create a new HttpClient and Post Header
+            //Erstelle Http CLient
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/testkey.php");
 
             try {
 
-                // Add your data
+                //Füge die zu sendende Daten hinzu
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-                // Execute HTTP Post Request
+                //Führe den Http Post aus
                 HttpResponse response = httpclient.execute(httppost);
                 HttpEntity entity = response.getEntity();
                 InputStream is = entity.getContent();
@@ -936,25 +1000,30 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
             runOnUiThread(new Runnable() {
                 public void run() {
 
+                    //Trenne den empfangenen String
                     String[] splitResult = String.valueOf(resp).split("::");
 
                     if(splitResult[0].equals("login_false")) {
 
+                        //Login am Server Fehlgeschlagen, daher aus App ausloggen
                         openlogin();
 
                     }else if(splitResult[0].equals("login_true")){
 
+                        //Empfangenen Public Key mit dem eigenen überprüfen
                         String publickeyphone = user.getString("RSA_PUBLIC_KEY", "");
                         String publickeyserver = splitResult[1];
 
                         if(publickeyserver.equals("---")){
 
+                            //Online kein Public Key eingetragen, daher einen neuen erstellen
                             createnewkey();
 
                         }else if(!publickeyphone.equals(publickeyserver)){
                             
                             if(publickeyserver.equals("-")){
 
+                                //Public Key wurde geändert, daher abfrage nach Revoke Key bevor ein neuer Public Key generiert werden kann
                                 differentkey();
 
                             }
@@ -962,6 +1031,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                     }else {
 
+                        //Error keine Internet Verbindung, daher ausloggen
                         openlogin();
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
                     }
@@ -973,6 +1043,7 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
     }
 
+    //Asynchroner Taskzum löschen des Accounts
     private class deleteAccount extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -1042,19 +1113,27 @@ public class Main_activity extends AppCompatActivity implements NavigationView.O
 
                     if(splitResult[0].equals("login_false")) {
 
-                        Toast.makeText(getApplicationContext(), "Delete Error" , Toast.LENGTH_LONG).show();
+                        //Login Daten sind Falsch
+                        Toast.makeText(getApplicationContext(), "Login not Successful" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
 
                     }else if(splitResult[0].equals("login_true")){
 
+                        //Löschen Erfolgreich. Daten auf dem Mobiltelefon werden gelöscht
                         editor.clear();
                         editor.commit();
 
+                        SQLiteHelper.cleanTableChat(newDB);
+                        SQLiteHelper.cleanTableUser(newDB);
 
                         openlogin();
 
                     }else {
-
+                        //Es konnte keine Verbindung zu dem Server aufgebaut werden
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
+                        openlogin();
+                        finish();
                     }
                 }
             });

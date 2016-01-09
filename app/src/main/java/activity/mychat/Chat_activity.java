@@ -52,6 +52,7 @@ import java.util.Random;
 import crypto.AESHelper;
 import crypto.Crypto;
 import crypto.RSA;
+import crypto.SignatureUtils;
 import database.SQLiteHelper;
 import items.Message;
 import items.MessagesListAdapter;
@@ -85,8 +86,6 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
     //Feld für den Notification Manager
     private NotificationManager mNotificationManager;
-    //Zeichen die erlaubt sind für die Random Funktion
-    private static char[] VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456879".toCharArray();
     //Datenbank Objekt
     public static SQLiteDatabase newDB;
 
@@ -277,7 +276,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                 if(chatSignature.get(i).length() > 0){
 
                     //Überprüfe die Signatur der Nachricht
-                    tmpSignature = ""+checkSignature(chatSignature.get(i), tmpmessage, chatMessage.get(i));
+                    tmpSignature = ""+checkSignature(chatSignature.get(i), tmpmessage, chatMessage.get(i), chatSender.get(i));
 
                 }else{
 
@@ -303,24 +302,28 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     }
 
     //Methode zum Überprüfen der Signatur der Nachricht
-    private Boolean checkSignature(String signature, String decmessage, String encmessage){
+    private Boolean checkSignature(String signature, String decmessage, String encmessage, String sender){
 
-        String newsig = "";
 
         //Wenn die entschlüsselte und die verschlüsselte Nachricht ungleich null ist überprüfe sie Signatur
         if(decmessage != null && encmessage != null){
 
-            newsig = Crypto.hashpassword(encmessage, decmessage);
+            String pubkey;
+
+                if(sender.equals(Main_activity.user.getString("USER_ID",""))){
+
+                    pubkey = Main_activity.user.getString("RSA_PUBLIC_KEY","");
+                }else{
+
+                    pubkey = getPublicKey();
+                }
+
+            //Überprüfe ob die Signatur der Nachricht Korrekt ist
+            return SignatureUtils.checkSignature(signature, encmessage, pubkey);
+        }else{
+
+            return false;
         }
-
-            //Wenn Signatur Stimmt gib true zurück und wenn sie falsch ist gib false zurück
-            if(signature.equals(newsig)){
-
-                return true;
-            }else{
-
-                return false;
-            }
     }
 
     //Methode zum Entschlüsseln der Nachrichten
@@ -348,7 +351,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             //Hole den Public Key des Empfängers
             String key = getPublicKey();
             //Erstelle Seed für AES Verschlüsselung
-            String rand = random();
+            String rand = Crypto.random();
 
             String encryptedkey;
             String privateencrypt;
@@ -369,14 +372,17 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             encryptedkey = RSA.encryptWithKey(key, rand);
             //Verschlüssel den AES Schlüssel mit dem eigenen Public Key für die eigene Datenbank
             privateencrypt = RSA.encryptWithStoredKey(rand);
-            //Erstelle eine Signatur der Verschlüsselten Nachricht und nutze die unverschlüsselte Nachricht als Seed
-            String signature = Crypto.hashpassword(encryptedmessage, message);
+
+            //Erstelle eine Signatur der Nachricht mit dem eignen RSA Schlüssel
+            String signature = SignatureUtils.genSignature(encryptedmessage);
 
             //Sende Nachricht an den Server
             new sendMessage().execute(encryptedmessage, currentDateandTime, encryptedkey, signature);
 
-            //Speichere die Nachricht in der Datennak mit "privatencrypt", damit man die gesendeten Nachrichten auch wieder entschlüsseln kann
-            Main_activity.datasourceChat.createChatEntry(userid, Main_activity.user.getString("USER_ID", "0"), Long.toString(userid), encryptedmessage, "true", currentDateandTime, "true", privateencrypt, signature);
+            //Speichere die Nachricht in der Datennak mit "privatencrypt",
+            //damit man die gesendeten Nachrichten auch wieder entschlüsseln kann
+            Main_activity.datasourceChat.createChatEntry(userid, Main_activity.user.getString("USER_ID", "0"),
+                    Long.toString(userid), encryptedmessage, "true", currentDateandTime, "true", privateencrypt, signature);
 
             texttosend.setText("");
             rand = "";
@@ -432,22 +438,6 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
         builder.setCancelable(false);
         builder.show();
-    }
-
-    //Methode zum erstellen eines Zufälligen Strings für die AES Verschlüsselung
-    public static String random() {
-        SecureRandom srand = new SecureRandom();
-        Random rand = new Random();
-        char[] buff = new char[128];
-
-        for (int i = 0; i < 192; ++i) {
-
-            if ((i % 10) == 0) {
-                rand.setSeed(srand.nextLong());
-            }
-            buff[i] = VALID_CHARACTERS[rand.nextInt(VALID_CHARACTERS.length)];
-        }
-        return new String(buff);
     }
 
     //Methode für das Navigation Layout
@@ -540,11 +530,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         msgBox.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
 
-                Main_activity.editor.clear();
-                Main_activity.editor.commit();
-
-                SQLiteHelper.cleanTableChat(newDB);
-                SQLiteHelper.cleanTableUser(newDB);
+                revokekey();
 
                 openlogin();
             }
@@ -804,8 +790,10 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
                                 //Login erfolgreich, Daten werden im Mobiltelefon gelöscht und Fenster um neuen Key zu erstellen wird geöffnet
                                 Main_activity.editor.putString("RSA_PUBLIC_KEY", "");
                                 Main_activity.editor.putString("RSA_PRIVATE_KEY", "");
-                                Main_activity.editor.putBoolean("key", false);
                                 Main_activity.editor.commit();
+
+                                Main_activity.datasourceChat.deleteAllEntries();
+
                                 createnewkey();
                             }else {
                                 Toast.makeText(getApplicationContext(), "Error Please try again", Toast.LENGTH_LONG).show();

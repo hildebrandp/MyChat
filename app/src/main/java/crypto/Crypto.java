@@ -1,28 +1,25 @@
 package crypto;
 
 import android.util.Log;
+
 import org.spongycastle.util.Arrays;
 import org.spongycastle.util.encoders.Base64;
 import org.spongycastle.util.io.pem.PemObject;
 import org.spongycastle.util.io.pem.PemWriter;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import java.util.Random;
 
 import activity.mychat.Main_activity;
 
@@ -32,6 +29,11 @@ public class Crypto {
 
     public static int PW_HASH_ITERATION_COUNT = 2500;
     private static MessageDigest md;
+    private static int randomlength = 192;
+
+    //Zeichen die erlaubt sind für die Random Funktion
+    private static char[] VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456879".toCharArray();
+
 
     public static void writePublicKeyToPreferences(KeyPair keyPair) {
         StringWriter publicStringWriter = new StringWriter();
@@ -150,6 +152,22 @@ public class Crypto {
     private static byte[] run(byte[] input, byte[] salt) {
         md.update(input);
         return md.digest(salt);
+    }
+
+    //Methode zum erstellen eines Zufälligen Strings für die AES Verschlüsselung
+    public static String random() {
+        SecureRandom srand = new SecureRandom();
+        Random rand = new Random();
+        char[] buff = new char[randomlength];
+
+        for (int i = 0; i < randomlength; ++i) {
+
+            if ((i % 10) == 0) {
+                rand.setSeed(srand.nextLong());
+            }
+            buff[i] = VALID_CHARACTERS[rand.nextInt(VALID_CHARACTERS.length)];
+        }
+        return new String(buff);
     }
 
 }
