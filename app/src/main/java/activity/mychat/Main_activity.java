@@ -61,31 +61,39 @@ import items.contactListViewAdapter;
 public class Main_activity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
 
+    //Felder für die SharedPreferences
     public static SharedPreferences user;
     public static SharedPreferences.Editor editor;
 
+    //Boolean Feld zum überprüfen wie oft man auf den Zurück Button drückt
     private boolean doubleBackToExitPressedOnce = false;
-    private ActionBarDrawerToggle drawerToggle;
 
+    //String für das User passwort
     public static String userpassword;
+
+    //String für die Antwort vom Server
     private String resp;
 
+    //Felder für den Datenbank zugriff
     public static SQLiteDatabase newDB;
     public static userEntryDataSource datasourceUser;
     public static chatEntryDataSource datasourceChat;
 
+    //Textfelder
     private TextView showusername;
     private ListView chatListView;
     private EditText searchuser;
 
+    //Arrays um die Daten der Kontakte zu Speichern
     private ArrayList<Long> userID = new ArrayList<Long>();
     private ArrayList<String> userName = new ArrayList<String>();
     private ArrayList<String> chatMessages = new ArrayList<String>();
     private List<contactItem> contactItems;
 
+    //Feld für Notifications
     private NotificationManager mNotificationManager;
 
-    //Broadcast um das ListView zu Aktualisieren wenn neuer User Hinzugefügt wurde
+    //Broadcast Receiver um das ListView zu Aktualisieren wenn neuer User Hinzugefügt wurde
     private BroadcastReceiver receiveruser = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -101,9 +109,10 @@ public class Main_activity extends AppCompatActivity
         }
     };
 
-    //Broadcast um das ListView zu Aktualisieren wenn Nachricht
+    //Broadcast Receiver um das ListView zu Aktualisieren wenn Nachricht
     //an diesen Emfänger empfangen wurde
     private BroadcastReceiver receiver = new BroadcastReceiver() {
+
         @Override
         public void onReceive(Context context, Intent intent) {
             Bundle bundle = intent.getExtras();
@@ -124,28 +133,37 @@ public class Main_activity extends AppCompatActivity
         //Zeige Activity ohne Tastatur
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
+        //Initialisiere Notification Manager
         mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
 
+        //Öffne die Shared Preferences
         user = getSharedPreferences("myapplab.securechat", MODE_PRIVATE);
         editor = user.edit();
+
+        //Speichere das Nutzer Passwort ab
         userpassword = getIntent().getExtras().getString("userpassword");
 
+        //Öffnen der Datenbank
         SQLiteHelper dbHelper = new SQLiteHelper(this);
         newDB = dbHelper.getWritableDatabase();
 
+        //Öffnen der Tabellen aus der Datenbank
         datasourceUser = new userEntryDataSource(this);
         datasourceUser.open();
         datasourceChat = new chatEntryDataSource(this);
         datasourceChat.open();
 
+        //Textfelder initialisieren
         showusername = (TextView)findViewById(R.id.txtshowusername);
         chatListView = (ListView)findViewById(R.id.userchatlist);
         searchuser = (EditText)findViewById(R.id.searchuser);
         searchuser.setMaxLines(1);
 
+        //Toolbar initialisieren
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        //Drawer Layout initialisieren
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -155,6 +173,8 @@ public class Main_activity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        //Dem Textfeld einen TextChangedListener zuweisen, der direkt wenn dort etwas eingegeben
+        //wurde in der Datenbank für die Kontakte sucht ob ein Kontakt mit dem eigegebenen Namen existiert
         searchuser.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -167,6 +187,7 @@ public class Main_activity extends AppCompatActivity
 
             @Override
             public void afterTextChanged(Editable s) {
+                //Arrays leeren
                 chatListView.removeAllViewsInLayout();
                 userID.clear();
                 userName.clear();
@@ -174,6 +195,7 @@ public class Main_activity extends AppCompatActivity
 
                 try {
 
+                    //In der Datenbank nach dem eingegebenen Namen suchen
                     String[] name = new String[1];
                     name[0] = searchuser.getText().toString() + "%";
 
@@ -183,14 +205,18 @@ public class Main_activity extends AppCompatActivity
                             "WHERE userlist.USER_NAME LIKE ? " +
                             "ORDER BY chatlist.CHAT_DATE DESC";
 
+                    //Datenbank Befehl ausführen und in Cursor Element Speichern
                     Cursor c = newDB.rawQuery(selectSearch, name);
 
+                    //Überprüfen ob Cursor Daten enthält
                     if (c != null) {
                         if (c.moveToFirst()) {
+                            //Solange Elemente vorhanden sind speichere die gefundenen Daten in den Arrays
                             do {
                                 Long tmpid = c.getLong(c.getColumnIndex("USER_ID"));
                                 String tmpname = c.getString(c.getColumnIndex("USER_NAME"));
 
+                                //Überprüfe ob ungelesene Nachrichten von dem Nutzer existieren nachdem gesucht wurde
                                 String[] id = new String[1];
                                 id[0] = Long.toString(tmpid);
 
@@ -200,25 +226,28 @@ public class Main_activity extends AppCompatActivity
 
                                 Cursor unreadmess = newDB.rawQuery(unreadmessages, id);
                                 unreadmess.moveToFirst();
-                                int count= unreadmess.getInt(0);
+                                int count = unreadmess.getInt(0);
                                 unreadmess.close();
 
-                                if(!userName.contains(tmpname)){
-                                    chatMessages.add(""+count);
+                                if (!userName.contains(tmpname)) {
+                                    chatMessages.add("" + count);
                                     userID.add(tmpid);
                                     userName.add(tmpname);
                                 }
 
                             } while (c.moveToNext());
                         }
+                        //Zeige die gefundenen Einträge an
                         displayResultList();
                     }
 
+                    //Schließe den Cursor
                     c.close();
                 } catch (SQLiteException se) {
                     Log.e(getClass().getSimpleName(), "Could not create or Open the database");
                 }
 
+                //Wenn das Textfeld leer ist zeige wieder alle Elemente aus der Datenbank an
                 if (searchuser.getText().toString().equals("")) {
                     openAndQueryDatabase();
                     displayResultList();
@@ -226,6 +255,7 @@ public class Main_activity extends AppCompatActivity
             }
         });
 
+        //OnclickListener für Listview, wenn Element angeklickt wird starte Chat Activity von dem jeweiligen Nutzer
         chatListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -234,6 +264,8 @@ public class Main_activity extends AppCompatActivity
             }
         });
 
+        //OnLongClickLinstener für Listview, wenn Element lange angeklickt wird zeige Fenster mit Option
+        //diesen Nutzer zu löschen
         chatListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
@@ -246,13 +278,15 @@ public class Main_activity extends AppCompatActivity
 
     }
 
+    //Methode um Ausgewählten Kontakt zu löschen
     private void deleteEntry(final int pos){
 
+        //Zeige einen AlertDialog mit dem Namen des zu Löschenden Kontakt
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Secure Chat");
         builder.setMessage("Delete User: " + userName.get(pos));
 
-        // Set up the buttons
+        //Erstelle OK Button zum löschen
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -264,6 +298,7 @@ public class Main_activity extends AppCompatActivity
                 displayResultList();
             }
         });
+        //Erstelle Button Cancel um das löschen abzubrechen
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -276,41 +311,32 @@ public class Main_activity extends AppCompatActivity
 
     }
 
+    //Methode um alle Kontake aus der Datenbank zu lesen und in den Array zu Speichern
     private void openAndQueryDatabase(){
         try {
-
+            //Lösche den Inhalt der Arrays
             chatListView.removeAllViewsInLayout();
             userID.clear();
             userName.clear();
             chatMessages.clear();
 
+            //Suche nach allen Konatkten
             String selectQuery = "SELECT USER_ID,USER_NAME " +
                                  "FROM userlist " +
                                  "ORDER BY USER_NAME DESC";
 
-
             Cursor c = newDB.rawQuery(selectQuery, null);
 
-
+            //Überprüfe ob Elemente vorhanden sind
             if (c != null ) {
                 if  (c.moveToFirst()) {
                     do {
 
-                        String[] data = new String[1];
-                        data[0] = Long.toString(c.getLong(c.getColumnIndex("USER_ID")));
-
-                        String selectchat = "SELECT CHAT_DATE,CHAT_ID " +
-                                "FROM chatlist " +
-                                "WHERE CHAT_ID = ? " +
-                                "ORDER BY CHAT_DATE DESC LIMIT 1";
-
-                        Cursor c2 = newDB.rawQuery(selectchat, data);
-
+                        //Speichere Daten der Kontakte in Tempoären Variablen
                         Long tmpid = c.getLong(c.getColumnIndex("USER_ID"));
                         String tmpname  = c.getString(c.getColumnIndex("USER_NAME"));
 
-
-
+                        //Überprüfe ob ungelesene Nachrichten von dem Kontakt "tmpname" vorhanden sind
                         String[] id = new String[2];
                         id[0] = Long.toString(tmpid);
                         id[1] = "false";
@@ -320,13 +346,15 @@ public class Main_activity extends AppCompatActivity
                                 "WHERE CHAT_ID = ? AND CHAT_READ = ? ";
 
                         Cursor unreadmess = newDB.rawQuery(unreadmessages, id);
+
+                        //Zähle die ungelesenen Nachrichten
                         int count= unreadmess.getCount();
                         unreadmess.close();
 
+                        //Speichere die Tempoären Variablen in den dafür vorgesehenen Arrays
                         chatMessages.add(""+count);
                         userID.add(tmpid);
                         userName.add(tmpname);
-
 
                     }while (c.moveToNext());
                 }
@@ -347,11 +375,14 @@ public class Main_activity extends AppCompatActivity
         }
     }
 
+    //Methode um die von "openandQueryDatabase" ausgelesenen Daten anzuzeigen
     private void displayResultList() {
 
+        //Erstelle "contactItem" Array
         contactItems = new ArrayList<contactItem>();
         contactItems.clear();
 
+        //Falls keine Kontakte vorhanden sind erstelle Element das anzeigt das keine vorhanden sind
         if(userID.size() == 0){
             userID.add(0L);
             userName.add("No User available");
@@ -359,31 +390,37 @@ public class Main_activity extends AppCompatActivity
             chatListView.setClickable(false);
         }
 
+        //Speichere den Inhalt der Arrays in einem contactItem und Speichere dieses dann in dem contactItem Array
         for (int i = 0; i < userID.size(); i++) {
             contactItem item = new contactItem(userID.get(i),userName.get(i), chatMessages.get(i));
             contactItems.add(item);
         }
+
+        //Füge das contactItem Array zu dem Listview hinzu und zeige dieses an
         contactListViewAdapter adapter1 = new contactListViewAdapter(this,R.layout.contact_item, contactItems);
         chatListView.setAdapter(adapter1);
     }
 
+    //Methode die ein Alert Dialog anzeigt wo man nach einem Nutzer suchen kann, ob dieser auf dem
+    //Server vorhanden ist
     private void searchforuser(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Secure Chat");
         builder.setMessage("Search new User:");
 
-        // Set up the input
+        //Erstelle Text Eingabe Feld
         final EditText input = new EditText(this);
         // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
         input.setInputType(InputType.TYPE_CLASS_TEXT );
         builder.setView(input);
 
-        // Set up the buttons
+        //Erstelle Buttons
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (!input.getText().toString().equals("")) {
+                    //Öffne Methode die nach dem Nutzer sucht
                     checkifuserexists(input.getText().toString());
 
                 } else {
@@ -401,39 +438,46 @@ public class Main_activity extends AppCompatActivity
         builder.show();
     }
 
+    //Methode die Aufgerufen wird, wenn man auf einen Kontakt klickt
     private void openChat(int position){
 
-        Long userid = userID.get(position);
-        String username = userName.get(position);
-
+        //Erstelle Intent Objekt und übergabe die Daten des Nutzers
+        //auf den geklickt wurde und starte die Chat activity
         Intent intent = new Intent(this, Chat_activity.class);
         Bundle b = new Bundle();
-        b.putLong("userid", userid);
-        b.putString("username", username);
+        b.putLong("userid", userID.get(position));
+        b.putString("username", userName.get(position));
         intent.putExtras(b);
         startActivity(intent);
     }
 
+    //Methode die aufgerufen wird wenn die Zurücktaste gedrückt wurde
+    //Methode muss zweimal innerhalb von 2 Sekunden aufgerufen werden, damit Activity geschlossen wird
     @Override
     public void onBackPressed() {
+        //Überprüfe ob Methode schonmal aufgerufen wurde, wenn ja dann schließe die Activity
         if (doubleBackToExitPressedOnce) {
 
+            //App wird geschlossen
+            //Datenbank schließen und passwort überschreiben
             userpassword = null;
             newDB.close();
             super.onBackPressed();
             return;
         }
 
+        //Setze Feld auf true und zeige Toast an, dass man die Taste nochmal drücken muss um die Activity zu schließen
         this.doubleBackToExitPressedOnce = true;
-
         Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+
+        //Wenn Drawer offen ist schließe diesen
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         }
 
+        //Starte Timer, der nach 2 Sekunden das Feld wieder auf false setzt
         new Handler().postDelayed(new Runnable() {
-
             @Override
             public void run() {
                 doubleBackToExitPressedOnce = false;
@@ -441,25 +485,23 @@ public class Main_activity extends AppCompatActivity
         }, 2000);
     }
 
+    //Methode die überprüft welches Element des Drawers angeklickt wurde
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_chats) {
-
-        } else if (id == R.id.nav_new_cotact) {
-
+        if (id == R.id.nav_new_cotact) {
+            //Öffne Methode um nach Kontakt zu suchen
             searchforuser();
         } else if (id == R.id.nav_newkey) {
-
+            //Öffne Maethode um neuen Key zu Generieren
             revokekey();
         } else if (id == R.id.nav_logout) {
-
+            //Öffne Methode um sich auszuloggen
             logout();
         }else if (id == R.id.nav_deleteacc) {
-
+            //Öffne Methode um den Account zu löschen
             deleteAccount();
         }
 
@@ -468,22 +510,24 @@ public class Main_activity extends AppCompatActivity
         return true;
     }
 
+    //Methode um seinen Key zu ändern, aber damit dieser geändert werden kann muss der
+    //Revoke Key eingegeben werden
     private void revokekey(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Secure Chat");
         builder.setMessage("Enter your Revoke Key:");
 
-        // Set up the input
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
-        // Set up the buttons
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
+                //Starte Asynchronen Task der überprüft ob der Revoke Key richtig ist
+                //vorher wird dieser noch gehashed
                 new revokekey().execute(Crypto.hashpassword(input.getText().toString(), userpassword));
             }
         });
@@ -497,17 +541,24 @@ public class Main_activity extends AppCompatActivity
         builder.show();
     }
 
+    //Methode um sich auszuloggen und alle Daten auf dem Telefon zu Löschen
     private void logout(){
 
         AlertDialog.Builder msgBox = new AlertDialog.Builder(this);
 
         msgBox.setTitle("Secure Chat");
         msgBox.setMessage("Logout will Delete all your Data");
+
         msgBox.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                //Lösche alle daten vom Telefon
+                editor.clear();
+                editor.commit();
 
-                revokekey();
+                Main_activity.datasourceChat.deleteAllEntries();
+                Main_activity.datasourceUser.deleteAllEntries();
 
+                //Öffne Login Activity
                 openlogin();
             }
         });
@@ -520,24 +571,29 @@ public class Main_activity extends AppCompatActivity
         });
 
         msgBox.setCancelable(false);
-        // create alert dialog
         AlertDialog alertDialog = msgBox.create();
-        // show it
         alertDialog.show();
     }
 
+    //Methode um Login Fenster zu öffnen und diese Activity zu schließen
     private void openlogin(){
 
         Intent i = new Intent(this, Login_activity.class);
         startActivity(i);
+
+        userpassword = null;
         finish();
     }
 
+    //Methode um Activity zu öffnen mit der man einen neuen Key erzeugen kann
     private void createnewkey(){
         Intent i = new Intent(this, NewKey_activity.class);
         startActivityForResult(i, 1);
     }
 
+    //Methode die geöffnet wird wenn der Public Key nicht mit dem auf dem Server übereinstimmt
+    //Nutzer muss wie bei RevokeKey Methode Revoke Key eingeben bevor er sich einen neuen
+    //Schlüssel generieren kann
     private void differentkey(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -571,6 +627,8 @@ public class Main_activity extends AppCompatActivity
         builder.show();
     }
 
+    //Methode um den Account zu löschen, wenn der eingegebene Revoke Key korrekt ist
+    //wird der Account gelöscht und alle Daten von ihm auch
     private void deleteAccount(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -601,6 +659,7 @@ public class Main_activity extends AppCompatActivity
         builder.show();
     }
 
+    //Methode die überprüft ob der nutzer nicht schon in der Datenbank vorhanden ist
     private void checkifuserexists(String name){
 
         String[] data = new String[1];
@@ -625,23 +684,29 @@ public class Main_activity extends AppCompatActivity
     @Override
     protected void onResume() {
 
+        //Zeige den Nutzernamen im Drawer Layout an
         showusername.setText(user.getString("USER_NAME", "Error loading Data"));
 
+        //Überprüfe ob der Background Service läuft, wenn ja stoppe ihn
         if(isMyServiceRunning(Background_Service.class.getName())){
             stopService(new Intent(getBaseContext(), Background_Service.class));
         }
 
+        //Starte den Background Servide
         Intent intent = new Intent(this, Background_Service.class);
-        intent.putExtra("Time", 30000);
         startService(intent);
 
+        //Starte den Asynchronen Task der den Public Key mit dem auf dem Server vergleicht
         new checkPublicKey().execute();
 
+        //Lösche alle Notifications mit der ID=0
         mNotificationManager.cancel(0);
 
+        //Starte die Broadcast Reciever
         registerReceiver(receiveruser, new IntentFilter(Background_Service.NOTIFICATION_USER));
         registerReceiver(receiver, new IntentFilter(Background_Service.NOTIFICATION_CHAT));
 
+        //Öffne und zeige Inhalte der Datenbank
         openAndQueryDatabase();
         displayResultList();
 
@@ -650,8 +715,11 @@ public class Main_activity extends AppCompatActivity
 
     @Override
     protected void onPause() {
-        super.onPause();
+
+        //Stoppe die Broadcast Reciever
         unregisterReceiver(receiveruser);
+        unregisterReceiver(receiver);
+        super.onPause();
     }
 
     @Override
@@ -660,6 +728,7 @@ public class Main_activity extends AppCompatActivity
         userpassword = "";
     }
 
+    //Methode die Prüft ob der Background Service läuft
     private boolean isMyServiceRunning(String className) {
         ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -670,6 +739,7 @@ public class Main_activity extends AppCompatActivity
         return false;
     }
 
+    //Wenn neuer Key erzeugt wurde zeige nachricht ob dies erfolgreich war oder nicht
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -689,28 +759,13 @@ public class Main_activity extends AppCompatActivity
             }
 
         }
-    }//onActivityResult
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-
-        if (drawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //Öffne das Menü
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
     }
 
     //Asynchroner Task um den Public Key zurückzuziehen
@@ -731,12 +786,12 @@ public class Main_activity extends AppCompatActivity
         public void postData(String valueIWantToSend1) {
 
 
-            // Create a new HttpClient and Post Header
+            //Erstelle Http Client mit passender URL
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/revokekey.php");
 
             try {
-                // Add your data
+                //Füge die zu sendenden Daten hinzu
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", user.getString("USER_NAME", "")));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", user.getString("USER_PASSWORD", "")));
@@ -744,7 +799,7 @@ public class Main_activity extends AppCompatActivity
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-                // Execute HTTP Post Request
+                //Führe den Http Post aus
                 HttpResponse response = httpclient.execute(httppost);
                 HttpEntity entity = response.getEntity();
                 InputStream is = entity.getContent();

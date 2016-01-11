@@ -91,6 +91,7 @@ public class Background_Service extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         //Start des Timers mit dem Intervall von 10 Sekunden
+
         startTimer(10000);
 
         return START_STICKY;
@@ -98,7 +99,7 @@ public class Background_Service extends Service {
 
     //Timer Methode die falls der Timer bereits läuft in Stopt und dann wieder startet
     public void startTimer(int time){
-        //Timer initialize
+        //Timer initialisieren
         if(mTimer1 != null) {
 
             mTimer1.cancel();

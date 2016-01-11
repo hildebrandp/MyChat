@@ -57,7 +57,8 @@ import database.SQLiteHelper;
 import items.Message;
 import items.MessagesListAdapter;
 
-
+//Klasse für´s Chatten, wenn die Klasse geöffnet wird ein ein neues View Geöffnet um mit dem Kontakt zu Chatten, der vorher ausgewählt wurde.
+//Diese Klasse Verschüsselt, die zu Sendende Nachricht, und sendet diese ab.
 public class Chat_activity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
 
     private ActionBarDrawerToggle drawerToggle;
@@ -145,7 +146,8 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             @Override
             public void onClick(View v) {
                 if (!texttosend.getText().toString().equals("")) {
-                    //Wenn das Textfeld mit dem zusendendem Text nicht leer ist wird die Nachricht an die Methode weitergeleitet, die diese dann Verschlüsselt
+                    //Wenn das Textfeld mit dem zusendendem Text nicht leer ist wird die
+                    //Nachricht an die Methode weitergeleitet, die diese dann Verschlüsselt
                     encryptMessage(texttosend.getText().toString());
                 }
             }
@@ -166,7 +168,6 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         }
 
         Intent intent = new Intent(this, Background_Service.class);
-        intent.putExtra("Time", 10000);
         startService(intent);
 
         //Datenbank öffnen und Anzeigen
@@ -440,11 +441,10 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
-    //Methode für das Navigation Layout
+    //Methode die überprüft welches Element des Drawers angeklickt wurde
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
         int id = item.getItemId();
 
         if (id == R.id.nav_chats) {

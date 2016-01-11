@@ -25,25 +25,31 @@ import activity.mychat.Main_activity;
 
 public class Crypto {
 
+    //String für den Verschlüsselten Key
     private static String encryptedKey;
 
+    //Anzahl der Iterationen für die Hashfunktion
     public static int PW_HASH_ITERATION_COUNT = 2500;
+    //Feld für den Message Digest
     private static MessageDigest md;
+    //Länge für die Seed, 192 Zeichen
     private static int randomlength = 192;
 
     //Zeichen die erlaubt sind für die Random Funktion
     private static char[] VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456879".toCharArray();
 
-
+    //Schreibe den Public Key in die Shared Preferences
     public static void writePublicKeyToPreferences(KeyPair keyPair) {
         StringWriter publicStringWriter = new StringWriter();
 
         try {
+            //Extrahiere den Public Key aus dem KeyPair
             PemWriter pemWriter = new PemWriter(publicStringWriter);
             pemWriter.writeObject(new PemObject("PUBLIC KEY", keyPair.getPublic().getEncoded()));
             pemWriter.flush();
             pemWriter.close();
 
+            //Entferne den Header des Public Key´s und Speicher diesen in den Shared Preferences
             Main_activity.user.edit().putString("RSA_PUBLIC_KEY", stripPublicKeyHeaders(publicStringWriter.toString())).commit();
 
         } catch (IOException e) {
@@ -52,22 +58,26 @@ public class Crypto {
         }
     }
 
+    //Schreibe den Private Key in die Shared Preferences
     public static void writePrivateKeyToPreferences(KeyPair keyPair) {
         StringWriter privateStringWriter = new StringWriter();
         try {
+            //Extrahiere den Private Key aus dem KeyPair
             PemWriter pemWriter = new PemWriter(privateStringWriter);
             pemWriter.writeObject(new PemObject("PRIVATE KEY", keyPair.getPrivate().getEncoded()));
             pemWriter.flush();
             pemWriter.close();
 
             try {
-
+                //Entferne den Header des Private Key´s
+                //und der Key wird mit dem AES Algorithmus verschlüsselt
                 encryptedKey = AESHelper.encrypt(Main_activity.userpassword, stripPrivateKeyHeaders(privateStringWriter.toString()));
                 privateStringWriter = null;
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
+            //Der Verschlüsselte Key wird in den Shared Preferences gespeichert
             Main_activity.user.edit().putString("RSA_PRIVATE_KEY", encryptedKey).commit();
             encryptedKey = "";
 
@@ -77,27 +87,33 @@ public class Crypto {
         }
     }
 
+    //Methode mit der aus dem String der Public Key erstellt wird und als Key Element zurückgegeben wird
     public static PublicKey getRSAPublicKeyFromString(String publicKeyPEM) throws Exception {
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA", "SC");
-        byte[] publicKeyBytes = Base64.decode(publicKeyPEM.getBytes("UTF-8"));
-        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(publicKeyBytes);
+            //Erstelle KeyFactory mit der "RSA" Instanz und dem "SC" Provider
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA", "SC");
+            byte[] publicKeyBytes = Base64.decode(publicKeyPEM.getBytes("UTF-8"));
+            X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(publicKeyBytes);
         return keyFactory.generatePublic(x509KeySpec);
     }
 
+    //Methode mit der aus dem String der Private Key erstellt wird und als Key Element zurückgegeben wird
     public static PrivateKey getRSAPrivateKeyFromString(String privateKeyPEM) throws Exception {
-        KeyFactory fact = KeyFactory.getInstance("RSA", "SC");
-        byte[] clear = Base64.decode(privateKeyPEM);
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
-        PrivateKey priv = fact.generatePrivate(keySpec);
-        Arrays.fill(clear, (byte) 0);
+            //Erstelle KeyFactory mit der "RSA" Instanz und dem "SC" Provider
+            KeyFactory fact = KeyFactory.getInstance("RSA", "SC");
+            byte[] clear = Base64.decode(privateKeyPEM);
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
+            PrivateKey priv = fact.generatePrivate(keySpec);
+            Arrays.fill(clear, (byte) 0);
         return priv;
     }
 
+    //Entferne den Header des Public Key´s
     public static String stripPublicKeyHeaders(String key) {
-        //strip the headers from the key string
         StringBuilder strippedKey = new StringBuilder();
         String lines[] = key.split("\n");
+        //Durchsuche alle Zeilen des Keys
         for (String line : lines) {
+            //Entferne die Zeilen in denen "BEGIN PUBLIC KEY" und "END PUBLIC KEY" vorkommt
             if (!line.contains("BEGIN PUBLIC KEY") && !line.contains("END PUBLIC KEY") && !Strings.isNullOrEmpty(line.trim())) {
                 strippedKey.append(line.trim());
             }
@@ -105,10 +121,13 @@ public class Crypto {
         return strippedKey.toString().trim();
     }
 
+    //Entferne den Header des Private Key´s
     public static String stripPrivateKeyHeaders(String key) {
         StringBuilder strippedKey = new StringBuilder();
         String lines[] = key.split("\n");
+        //Durchsuche alle Zeilen des Keys
         for (String line : lines) {
+            //Entferne die Zeilen in denen "BEGIN PUBLIC KEY" und "END PUBLIC KEY" vorkommt
             if (!line.contains("BEGIN PRIVATE KEY") && !line.contains("END PRIVATE KEY") && !Strings.isNullOrEmpty(line.trim())) {
                 strippedKey.append(line.trim());
             }
@@ -116,24 +135,29 @@ public class Crypto {
         return strippedKey.toString().trim();
     }
 
-    public static String hashpassword(String password,String username) {
+    //Methode um einen String mit dem Seed zu hashen
+    //Als Hash funktion wird ein "SHA-512" Algorithmus verwendet
+    public static String hashpassword(String password,String seed) {
 
             try {
+                //Erzeuge MessageDigest mit Instanz von "SHA-512" Algorithmus
                 md = MessageDigest.getInstance("SHA-512");
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
                 throw new RuntimeException("No Such Algorithm");
             }
 
-            String result = hashPw(password, username);
+            String result = hashPw(password, seed);
 
             return result;
     }
 
+    //Funktion um das Passwort zu hashen
     private static String hashPw(String pw, String salt) {
         byte[] bSalt;
         byte[] bPw;
 
+        //Konvertiere String zu Byte
         try {
             bSalt = salt.getBytes("UTF-8");
             bPw = pw.getBytes("UTF-8");
@@ -141,6 +165,7 @@ public class Crypto {
             throw new RuntimeException("Unsupported Encoding", e);
         }
 
+        //Iteriere Passwort
         byte[] digest = run(bPw, bSalt);
         for (int i = 0; i < PW_HASH_ITERATION_COUNT - 1; i++) {
             digest = run(digest, bSalt);
@@ -149,6 +174,7 @@ public class Crypto {
         return Base64.toBase64String(digest);
     }
 
+    //Hash Funktion
     private static byte[] run(byte[] input, byte[] salt) {
         md.update(input);
         return md.digest(salt);

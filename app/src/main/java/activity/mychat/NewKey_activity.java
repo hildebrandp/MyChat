@@ -31,65 +31,48 @@ import java.util.Random;
 import crypto.Crypto;
 import crypto.RSA;
 
-
+//Activity um neuen Public und Private Key zu erzeugen
 public class NewKey_activity extends AppCompatActivity {
 
+    //String für die Antwort des Servers
     private String resp;
+    //String für Result Code der zurückgegeben wird
     private String result = "false";
+    //String für Random erzeugten Key
     private String key;
-
+    //Boolean Feld zum überprüfen wie oft man auf den Zurück Button drückt
     private boolean doubleBackToExitPressedOnce = false;
+    //Char Array mit den Buchstaben aus denen der Random String erzeugt wird
     private static char[] VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456879".toCharArray();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_newkey);
 
+        //Starte Asynchronen Task für Key erzeugung
         new createKey().execute();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        if (requestCode == 1) {
-
-            if(resultCode == Activity.RESULT_OK){
-                String result=data.getStringExtra("result");
-
-                if(result.equals("true")){
-
-                    Main_activity.editor.putBoolean("key", true);
-                    result = "true";
-                    Intent returnIntent = new Intent();
-                    returnIntent.putExtra("result", result);
-                    setResult(RESULT_OK, returnIntent);
-                    finish();
-
-                }
-
-            }else if (resultCode == Activity.RESULT_CANCELED) {
-                //Write your code if there's no result
-            }
-
-        }
-    }//onActivityResult
-
+    //Methode um einen Secure Random Key zu erzeugen
     public static String random() {
         SecureRandom srand = new SecureRandom();
         Random rand = new Random();
         char[] buff = new char[16];
 
         for (int i = 0; i < 16; ++i) {
-            // reseed rand once you've used up all available entropy bits
+
             if ((i % 10) == 0) {
-                rand.setSeed(srand.nextLong()); // 64 bits of random!
+                rand.setSeed(srand.nextLong());
             }
             buff[i] = VALID_CHARACTERS[rand.nextInt(VALID_CHARACTERS.length)];
         }
         return new String(buff);
     }
 
+    //Methode die einem den Revoke Key anzeigt, den man braucht um den Account zu Löschen
+    //oder um einen neuen Key zu erzeugen
     private void revokekeywindow(){
 
         AlertDialog.Builder msgBox = new AlertDialog.Builder(this);
@@ -114,8 +97,21 @@ public class NewKey_activity extends AppCompatActivity {
         alertDialog.show();
     }
 
+    //Methode um Login Fenster zu öffnen und diese Activity zu schließen
+    private void openlogin(){
+
+        Intent i = new Intent(this, Login_activity.class);
+        startActivity(i);
+
+        Main_activity.userpassword = null;
+        finish();
+    }
+
+    //Methode die aufgerufen wird wenn die Zurücktaste gedrückt wurde
+    //Methode muss zweimal innerhalb von 2 Sekunden aufgerufen werden, damit Activity geschlossen wird
     @Override
     public void onBackPressed() {
+        //Überprüfe ob Methode schonmal aufgerufen wurde, wenn ja dann schließe die Activity
         if (doubleBackToExitPressedOnce) {
             result = "false";
             Intent returnIntent = new Intent();
@@ -126,11 +122,12 @@ public class NewKey_activity extends AppCompatActivity {
             return;
         }
 
+        //Setze Feld auf true und zeige Toast an, dass man die Taste nochmal drücken muss um die Activity zu schließen
         this.doubleBackToExitPressedOnce = true;
         Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
 
+        //Starte Timer, der nach 2 Sekunden das Feld wieder auf false setzt
         new Handler().postDelayed(new Runnable() {
-
             @Override
             public void run() {
                 doubleBackToExitPressedOnce = false;
@@ -138,15 +135,29 @@ public class NewKey_activity extends AppCompatActivity {
         }, 2000);
     }
 
+    //Methode die den Result Code false zurück gibt wenn die Activity vorzeitig beendet wird
+    @Override
+    protected void onDestroy() {
+        result = "false";
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("result", result);
+        setResult(RESULT_OK, returnIntent);
+        super.onDestroy();
+    }
+
+    //Asynchroner Task, der die Schlüssel erzeugt und diese dann abspeichert
     private class createKey extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
 
+            //Erzeuge 2048 bit RSA-Schlüsselpaar
             final KeyPair keyPair = RSA.generate();
 
+            //Speichere RSA-Schlüssel in den Shared Preferences
             Crypto.writePrivateKeyToPreferences(keyPair);
             Crypto.writePublicKeyToPreferences(keyPair);
 
+            //Erzeuge Revoke Key
             key = random();
 
             postData(key);
@@ -162,12 +173,12 @@ public class NewKey_activity extends AppCompatActivity {
         public void postData(String revokekey) {
 
 
-            // Create a new HttpClient and Post Header
+            //Erzeuge Http Client
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/updateKey.php");
 
             try {
-                // Add your data
+                //Füge die Daten zum Client
                 String publickey = Main_activity.user.getString("RSA_PUBLIC_KEY", "");
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", Main_activity.user.getString("USER_NAME", "")));
@@ -177,7 +188,7 @@ public class NewKey_activity extends AppCompatActivity {
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-                // Execute HTTP Post Request
+                //Führe HTTP Post aus und warte auf Antwort vom Server
                 HttpResponse response = httpclient.execute(httppost);
                 HttpEntity entity = response.getEntity();
                 InputStream is = entity.getContent();
@@ -213,27 +224,34 @@ public class NewKey_activity extends AppCompatActivity {
 
                     if(splitResult[0].equals("login_false")) {
 
+                        //Login nicht erfolgreich
+                        openlogin();
                     }else if(splitResult[0].equals("login_true")){
 
+                        //Login erfolgreich
                         if(splitResult[1].equals("update_true")){
 
+                            //Public Key erfolgreich auf Server Gespeichert
                             Toast.makeText(getApplicationContext(), "Key update successful", Toast.LENGTH_LONG).show();
 
+                            //Shared Preferences Aktualisieren
                             Main_activity.editor.putBoolean("key", true);
                             Main_activity.editor.commit();
 
+                            //Zeige Fenster mit dem Revoke Key
                             revokekeywindow();
 
                         }else{
 
+                            //Key Speichern fehlgeschlagen
                             Toast.makeText(getApplicationContext(), "Key update fail" , Toast.LENGTH_LONG).show();
-
                         }
 
                     }else {
 
+                        //Error bei hochladen
+                        openlogin();
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
-
                     }
                 }
             });

@@ -30,16 +30,22 @@ import crypto.Crypto;
 import database.SQLiteHelper;
 
 
+//Klasse um einen neuen Account zu erstellen
 public class NewAccount_activity extends AppCompatActivity{
 
+    //Textfelder für Nutzernamen und Passwort, Button um den Account zu erstellen
     private EditText newUsername;
     private EditText newPassword1;
     private EditText newPassword2;
     private Button createAccount;
 
+    //Result Code der an die Login Activity übergeben wird, wenn diese Activity geschlossen wird
     private String result = "false";
+
+    //String für die Antwort vom Server
     private String resp;
 
+    //Boolean Feld zum überprüfen wie oft man auf den Zurück Button drückt
     private boolean doubleBackToExitPressedOnce = false;
 
     @Override
@@ -47,18 +53,21 @@ public class NewAccount_activity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_newaccount);
 
+        //Felder initialisieren
         newUsername = (EditText)findViewById(R.id.newUsername);
         newPassword1 = (EditText)findViewById(R.id.newPassword1);
         newPassword2 = (EditText)findViewById(R.id.newPassword2);
         createAccount = (Button)findViewById(R.id.btncreateaccount);
 
-
+        //OnClickListener für Button
         createAccount.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
+                //Überprüfen ob Felder leer oder Passwörter ungleich
                 if (checkinput()) {
 
+                    //Button Clickable auf false setzten solange geprüft wird ob Account erstellt werden kann
                     createAccount.setClickable(false);
                     new createnewaccount().execute(newUsername.getText().toString(), Crypto.hashpassword(newPassword1.getText().toString(), newUsername.getText().toString() ));
                 }
@@ -67,6 +76,7 @@ public class NewAccount_activity extends AppCompatActivity{
 
     }
 
+    //Methode die prüft ob die eingabe Felder leer sind oder ob die Passwörter ungleich sind
     private boolean checkinput(){
 
         if(newUsername.equals("")){
@@ -86,6 +96,8 @@ public class NewAccount_activity extends AppCompatActivity{
         }
     }
 
+    //Wenn erstellung erfolgreich war wird diese Activity geschlossen und der Result code true
+    //an die Login Activity übergeben
     private void startMain(){
 
         result = "true";
@@ -96,10 +108,14 @@ public class NewAccount_activity extends AppCompatActivity{
         finish();
     }
 
+    //Methode die aufgerufen wird wenn die Zurücktaste gedrückt wurde
+    //Methode muss zweimal innerhalb von 2 Sekunden aufgerufen werden, damit Activity geschlossen wird
     @Override
     public void onBackPressed() {
+        //Überprüfe ob Methode schonmal aufgerufen wurde, wenn ja dann schließe die Activity
         if (doubleBackToExitPressedOnce) {
 
+            //Activity schließen und Result Code false zurückgeben
             result = "false";
             Intent returnIntent = new Intent();
             returnIntent.putExtra("result", result);
@@ -110,11 +126,12 @@ public class NewAccount_activity extends AppCompatActivity{
             return;
         }
 
+        //Setze Feld auf true und zeige Toast an, dass man die Taste nochmal drücken muss um die Activity zu schließen
         this.doubleBackToExitPressedOnce = true;
         Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
 
+        //Starte Timer, der nach 2 Sekunden das Feld wieder auf false setzt
         new Handler().postDelayed(new Runnable() {
-
             @Override
             public void run() {
                 doubleBackToExitPressedOnce = false;
@@ -122,6 +139,8 @@ public class NewAccount_activity extends AppCompatActivity{
         }, 2000);
     }
 
+    //Asynchroner Task der prüft ob der Nutzername verfügbar ist, wenn dieser frei ist wird
+    //der Account erstellt
     private class createnewaccount extends AsyncTask<String, Integer, Double> {
 
         protected Double doInBackground(String... params) {
@@ -139,19 +158,19 @@ public class NewAccount_activity extends AppCompatActivity{
         public void postData(String valueIWantToSend1, String valueIWantToSend2) {
 
 
-            // Create a new HttpClient and Post Header
+            //Erstelle Http Client
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httppost = new HttpPost("http://schisskiss.no-ip.biz/SecureChat/newaccount.php");
 
             try {
-                // Add your data
+                //Füge die Daten zu dem Http Client hinzu
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
                 nameValuePairs.add(new BasicNameValuePair("username", valueIWantToSend1));
                 nameValuePairs.add(new BasicNameValuePair("userpassword", valueIWantToSend2));
                 nameValuePairs.add(new BasicNameValuePair("key", "16485155612574852"));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-                // Execute HTTP Post Request
+                //Führe Http Post aus
                 HttpResponse response = httpclient.execute(httppost);
                 HttpEntity entity = response.getEntity();
                 InputStream is = entity.getContent();
@@ -185,14 +204,18 @@ public class NewAccount_activity extends AppCompatActivity{
 
                     String[] splitResult = String.valueOf(resp).split("::");
 
+                    //Überprüfe die Antwort vom Server
                     if(splitResult[0].equals("user_name_used")) {
 
+                        //Nutzername bereits vergeben, Textfeld vom Nutzernamen leeren und Button wieder freigeben
                         Toast.makeText(getApplicationContext(), "User Name is already used", Toast.LENGTH_LONG).show();
                         newUsername.setText("");
                         createAccount.setClickable(true);
 
                     }else if(splitResult[0].equals("insert_success")){
 
+                        //Erstellung des Accounts erfolgreich
+                        //Daten in den Shared Preferences Speichern
                         Login_activity.editor.putString("USER_ID", splitResult[1]);
                         Login_activity.editor.putString("USER_NAME", newUsername.getText().toString());
                         Login_activity.editor.putString("USER_PASSWORD", Crypto.hashpassword(newPassword1.getText().toString(), newUsername.getText().toString()));
@@ -202,10 +225,12 @@ public class NewAccount_activity extends AppCompatActivity{
                         Login_activity.editor.putBoolean("key", false);
                         Login_activity.editor.commit();
 
+                        //Activity schließen
                         startMain();
 
                     }else {
 
+                        //Server nicht erreichbar
                         Toast.makeText(getApplicationContext(), "Error" , Toast.LENGTH_LONG).show();
                         createAccount.setClickable(true);
                     }
