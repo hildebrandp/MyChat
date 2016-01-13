@@ -1,5 +1,7 @@
 package items;
 
+//Klasse die ein Element für eine Chat Nachricht darstellt
+//dieses Element kann dann im MessageListAdapter gespeichert werden
 public class Message {
     private String chatDate, chatMessage, chatVerified,senderid;
 

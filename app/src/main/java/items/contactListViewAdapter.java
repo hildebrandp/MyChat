@@ -10,21 +10,27 @@ import android.widget.TextView;
 import activity.mychat.R;
 import java.util.List;
 
+//Klasse für einen ListViewAdapter um die abgespeicherten contactItem´s
+//zu erstellen und diese dann anzuzeigen
 public class contactListViewAdapter extends ArrayAdapter<contactItem> {
 
-    Context context;
+    //Context Element
+    private Context context;
 
+    //Methode der die contactItems übergeben werden
     public contactListViewAdapter(Context context, int resourceId,List<contactItem> items) {
         super(context, resourceId, items);
         this.context = context;
     }
 
-    /*private view holder class*/
+    //Viewholder Methode
     private class ViewHolder {
         TextView txtName;
         TextView txtNumbermessages;
     }
 
+    //Methode um ListView zu initialisieren und die einträge des contactListViewAdapter
+    //in den entsprechenden Textfeldern anzuzeigen
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder = null;
         contactItem rowItem = getItem(position);

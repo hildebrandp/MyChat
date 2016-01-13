@@ -10,29 +10,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+//Klasse um ein Datenbank Element für die Tabelle Chat zu erstellen, auszulesen
+//oder um eins zu löschen
 public class chatEntryDataSource {
 
-    // Database fields
+    //Datenbank Feld
     private SQLiteDatabase chatdatabase;
     private SQLiteHelper chatdbHelper;
 
+    //String in dem alle Felder der Tabelle Chat gespeichert sind
     private String[] allColumnsChat = {SQLiteHelper.COLUMN_CHAT_ID,
             SQLiteHelper.COLUMN_CHAT_SENDER_ID, SQLiteHelper.COLUMN_CHAT_RECIEVER_ID, SQLiteHelper.COLUMN_CHAT_MESSAGE,
             SQLiteHelper.COLUMN_CHAT_READ, SQLiteHelper.COLUMN_CHAT_DATE, SQLiteHelper.COLUMN_CHAT_ISSEND, SQLiteHelper.COLUMN_CHAT_AESKEY, SQLiteHelper.COLUMN_CHAT_SIGNATURE};
 
+    //Methode um Datenbank Feld zu initialisieren
     public chatEntryDataSource(Context context) {
         chatdbHelper = new SQLiteHelper(context);
     }
 
+    //Methode um die datenbank mit schreibzugriff zu öffnen
     public void open() throws SQLException {
         chatdatabase = chatdbHelper.getWritableDatabase();
     }
 
+    //Methode um die datenbank zu schließen
     public void close() {
         chatdbHelper.close();
     }
 
+    //Methode um einen neuen Eintrag in die Tabelle Chat zu machen
     public chatDbEntry createChatEntry(Long CHAT_ID,String CHAT_SENDER_ID,String CHAT_RECIEVER_ID,String CHAT_MESSAGE, String CHAT_READ, String CHAT_DATE, String CHAT_ISSEND, String CHAT_AESKEY, String CHAT_SIGNATURE) {
+        //Erstelle ein Element mit den Übergebenen Daten
         ContentValues values = new ContentValues();
         values.put(SQLiteHelper.COLUMN_CHAT_ID, CHAT_ID);
         values.put(SQLiteHelper.COLUMN_CHAT_SENDER_ID, CHAT_SENDER_ID);
@@ -44,6 +52,7 @@ public class chatEntryDataSource {
         values.put(SQLiteHelper.COLUMN_CHAT_AESKEY, CHAT_AESKEY);
         values.put(SQLiteHelper.COLUMN_CHAT_SIGNATURE, CHAT_SIGNATURE);
 
+        //Füge die Daten in die Tabelle Chat ein
         chatdatabase.insert(SQLiteHelper.TABLE_CHAT, null, values);
         Cursor cursor = chatdatabase.query(SQLiteHelper.TABLE_CHAT, allColumnsChat, null, null, null, null, null, null);
         cursor.moveToFirst();
@@ -52,14 +61,17 @@ public class chatEntryDataSource {
         return newDbEntry;
     }
 
+    //Methode um alle Tabellen Einträge mit der übergebenen ID zu löschen
     public void deleteEntry(String id) {
         chatdatabase.delete(SQLiteHelper.TABLE_CHAT, SQLiteHelper.COLUMN_CHAT_ID + " = " + id, null);
     }
 
+    //Methode um alle Eintrage aus der Tabelle Chat zu löschen
     public void deleteAllEntries(){
         chatdatabase.execSQL("DELETE FROM chatlist");
     }
 
+    //Methode um ein Element aus der Datenbank zu öffnen auf dem der Cursor steht, der übergeben wird
     private chatDbEntry cursorToEntry(Cursor cursor) {
         chatDbEntry entry = new chatDbEntry();
         entry.setId(cursor.getLong(0));

@@ -1,6 +1,8 @@
 package items;
 
-
+//Klasse die ein Element für einen Kontakt darstellt
+//Wenn man ein contactItem erstellt kann man es zu dem
+//contactListViewAdapter hinzufügen
 public class contactItem {
 
     private long id;

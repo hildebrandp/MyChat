@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Layout mit dem Inhalt für das activity_main Layouts -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -14,6 +15,7 @@
     tools:showIn="@layout/app_bar_main">
 
 
+    <!-- Textfeld für die Suche -->
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -23,6 +25,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"/>
 
+    <!-- ListView um die Kontake oder die Elemente der Suchanfrage anzuzeigen -->
     <ListView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

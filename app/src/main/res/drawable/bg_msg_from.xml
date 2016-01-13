@@ -2,7 +2,7 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle" >
 
-    <!-- view background color -->
+    <!-- Hintergrund Farbe für Nachrichten die man Selbst geschrieben hat -->
     <solid android:color="@color/bg_msg_from" >
     </solid>
 

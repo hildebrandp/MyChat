@@ -1,6 +1,6 @@
 package database;
 
-//Class for DB Entry
+//Klasse die ein Element für die Tabelle User darstellt
 public class userDbEntry {
 
     private String USER_ID;

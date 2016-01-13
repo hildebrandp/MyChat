@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Layout für den Inhalt des activity_chat Layouts -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -11,6 +12,7 @@
     tools:showIn="@layout/app_bar_chat">
 
 
+    <!-- Button um den eigegebenen Text zu Senden -->
     <Button
         android:layout_width="wrap_content"
         android:layout_height="50dp"
@@ -20,6 +22,7 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"/>
 
+    <!-- TextView für den Text den man senden will -->
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="50dp"
@@ -30,6 +33,7 @@
         android:layout_toLeftOf="@+id/btnsend"
         android:layout_toStartOf="@+id/btnsend"/>
 
+    <!-- ListView um die Nachrichten anzuzeigen -->
     <ListView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

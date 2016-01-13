@@ -1,6 +1,7 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
 android:shape="rectangle" >
 
+//Element um Hintergrundfarbe einzustellen
 <gradient
     android:startColor="#81C784"
     android:centerColor="#4CAF50"

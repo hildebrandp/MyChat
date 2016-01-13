@@ -1,6 +1,7 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle" >
 
+    <!-- Hintergrund Farbe für die Chat Activity -->
     <gradient
         android:startColor="#14BEE4"
         android:centerColor="#12ABCD"

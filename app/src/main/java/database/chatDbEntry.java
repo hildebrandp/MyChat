@@ -1,6 +1,7 @@
 package database;
 
 
+//Klasse die ein Element aus der Datenbank für die Tabelle Chat dargestellt
 public class chatDbEntry {
     private long id;
     private String CHAT_SENDER_ID;
