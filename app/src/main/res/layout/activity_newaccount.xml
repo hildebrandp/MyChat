@@ -22,8 +22,7 @@
             android:layout_alignParentStart="true"
             android:layout_marginLeft="25dp"
             android:layout_marginStart="25dp"
-            android:layout_marginTop="35dp"
-            android:digits="qwertzuiopüasdfghjklöäyxcvbnmQWERTZUIOPÜASDFGHJKLÖÄYXCVBNM1234567890-+ "/>
+            android:layout_marginTop="35dp"/>
 
         <!-- Textfeld für das Passwort -->
         <EditText
@@ -36,8 +35,7 @@
             android:layout_below="@+id/newUsername"
             android:layout_alignLeft="@+id/newUsername"
             android:layout_alignStart="@+id/newUsername"
-            android:layout_marginTop="25dp"
-            android:digits="qwertzuiopüasdfghjklöäyxcvbnmQWERTZUIOPÜASDFGHJKLÖÄYXCVBNM1234567890 "/>
+            android:layout_marginTop="25dp"/>
 
         <!-- Textfeld für die wiederholung des Passworts -->
         <EditText
@@ -50,8 +48,7 @@
             android:layout_below="@+id/newPassword1"
             android:layout_alignLeft="@+id/newPassword1"
             android:layout_alignStart="@+id/newPassword1"
-            android:layout_marginTop="25dp"
-            android:digits="qwertzuiopüasdfghjklöäyxcvbnmQWERTZUIOPÜASDFGHJKLÖÄYXCVBNM1234567890 "/>
+            android:layout_marginTop="25dp"/>
 
         <!-- Button um den neuen Account zu erstellen -->
         <Button

@@ -6,6 +6,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -48,6 +50,11 @@ public class NewAccount_activity extends AppCompatActivity{
     //Boolean Feld zum überprüfen wie oft man auf den Zurück Button drückt
     private boolean doubleBackToExitPressedOnce = false;
 
+    //Zeichen die erlaubt sind für das Passwort
+    private String characters_pw = "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM1234567890";
+    //Zeichen die erlaubt sind für den Nutzernamen
+    private String characters_un = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-+._ ";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,8 +76,83 @@ public class NewAccount_activity extends AppCompatActivity{
 
                     //Button Clickable auf false setzten solange geprüft wird ob Account erstellt werden kann
                     createAccount.setClickable(false);
-                    new createnewaccount().execute(newUsername.getText().toString(), Crypto.hashpassword(newPassword1.getText().toString(), newUsername.getText().toString() ));
+                    new createnewaccount().execute(newUsername.getText().toString(), Crypto.hashpassword(newPassword1.getText().toString(), newUsername.getText().toString()));
                 }
+            }
+        });
+
+        //In den drei Textchangedlistener wird überprüft ob unzulässige
+        //Zeichen eingegeben wurden, diese werden dann entfernt und es wird
+        //dem Nutzer angezeigt, dass das eigegebene Zeichen nicht nutzbar ist
+        newPassword1.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            //Methode die aufgerufen wird wenn sich der Text im EditText feld ändert
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                //Überprüfen ob in dem eingegebenen Text zeichen vorhanden sind die nicht
+                //zulässig sind
+                if (s.toString().length() > 0 && !characters_pw.contains(s.toString().substring(s.length() - 1))) {
+                    //String ohne das unzülässige Zeichen erstellen
+                    String str = s.toString().substring(0, s.length() - 1);
+                    //Neuen String anzeigen
+                    newPassword1.setText("");
+                    newPassword1.append(str);
+                    //Anzeigen welches Zeichen nicht zulässig ist
+                    Toast.makeText(getApplicationContext(), "Character: " + s.toString().charAt(count) + " not valid!", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        newPassword2.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().length() > 0 && !characters_pw.contains(s.toString().substring(s.length() - 1))) {
+                    String str = s.toString().substring(0, s.length()-1);
+                    newPassword2.setText("");
+                    newPassword2.append(str);
+
+                    Toast.makeText(getApplicationContext(), "Character: " + s.toString().charAt(count) + " not valid!", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        newUsername.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().length() > 0 && !characters_un.contains(s.toString().substring(s.length() - 1))) {
+                    String str = s.toString().substring(0, s.length()-1);
+
+                    newUsername.setText("");
+                    newUsername.append(str);
+
+                    Toast.makeText(getApplicationContext(), "Character: " + s.toString().charAt(s.length()-1) + " not valid!", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
             }
         });
 
@@ -90,6 +172,12 @@ public class NewAccount_activity extends AppCompatActivity{
             return false;
         }else if(!newPassword1.getText().toString().equals(newPassword2.getText().toString())){
             Toast.makeText(getApplicationContext(), "Passwords not equal!", Toast.LENGTH_LONG).show();
+            return false;
+        }else if(newPassword1.getText().length() < 6){
+            Toast.makeText(getApplicationContext(), "Passwords too short!", Toast.LENGTH_LONG).show();
+            return false;
+        }else if(newUsername.getText().length() < 5){
+            Toast.makeText(getApplicationContext(), "Username too short!", Toast.LENGTH_LONG).show();
             return false;
         }else{
             return true;

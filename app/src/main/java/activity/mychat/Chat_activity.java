@@ -9,33 +9,23 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -50,12 +40,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Random;
 import crypto.AESHelper;
 import crypto.Crypto;
 import crypto.RSA;
@@ -66,9 +54,7 @@ import items.MessagesListAdapter;
 
 //Klasse für´s Chatten, wenn die Klasse geöffnet wird ein ein neues View Geöffnet um mit dem Kontakt zu Chatten, der vorher ausgewählt wurde.
 //Diese Klasse Verschüsselt, die zu Sendende Nachricht, und sendet diese ab.
-public class Chat_activity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
-
-    private ActionBarDrawerToggle drawerToggle;
+public class Chat_activity extends AppCompatActivity {
 
     //Array fürs Speichern der Nachrichten mit den zugehörigen Daten
     private ArrayList<String> chatMessage = new ArrayList<String>();
@@ -119,7 +105,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_chat);
+        setContentView(R.layout.content_chat);
 
         //Initialisiere Notification Manager
         mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -132,24 +118,12 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         userid = getIntent().getExtras().getLong("userid");
         username = getIntent().getExtras().getString("username");
 
+        //Titel setzten mit dem Namen des Empfängers
+        getSupportActionBar().setTitle("User: " + username);
+
         //Öffne Datenbank
         SQLiteHelper dbHelper = new SQLiteHelper(this);
         newDB = dbHelper.getWritableDatabase();
-
-        //Objekt für die Tollbar, in die der Name des Emfängers kommt
-        Toolbar toolbar1 = (Toolbar) findViewById(R.id.toolbar1);
-        setSupportActionBar(toolbar1);
-        getSupportActionBar().setTitle(username);
-
-        //Objekt für das DrawerLayout
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar1, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
 
         //OnClickListener für den Senden Button
         btnsend.setOnClickListener(new View.OnClickListener() {
@@ -202,12 +176,6 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         this.doubleBackToExitPressedOnce = true;
         Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
 
-        //Wenn Drawer offen ist schließe diesen
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        }
-
         //Starte Timer, der nach 2 Sekunden das Feld wieder auf false setzt
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -253,7 +221,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             Cursor c = Main_activity.newDB.rawQuery(selectSearch, data);
 
             //Makiere die emfangenen Nachrichten als gelesen
-            ContentValues newval=new ContentValues();
+            ContentValues newval = new ContentValues();
             newval.put("CHAT_READ", "true");
             String[] args={Long.toString(userid)};
 
@@ -483,16 +451,23 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         builder.show();
     }
 
-    //Methode die überprüft welches Element des Drawers angeklickt wurde
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        MenuInflater men = getMenuInflater();
+        men.inflate(R.menu.settings_menu, menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
         if (id == R.id.nav_chats) {
 
             finish();
-        } else if (id == R.id.nav_new_cotact) {
+        } else if (id == R.id.nav_new_contact) {
 
             searchforuser();
         } else if (id == R.id.nav_newkey) {
@@ -506,31 +481,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
             deleteAccount();
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-
-        if (drawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     //Wenn der Nutzer seinen Key zurückziehen will muss er seinen Revoke Key eingeben. Dafür Wird ein Alert Dialog angezeigt

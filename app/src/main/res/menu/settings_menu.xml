@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Alle Felder des Menüs Namen und Icon zuweisen-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <item android:id="@+id/expanded_menu"
+        android:icon="@drawable/ic_action_overflow"
+        android:title="menu"
+        app:showAsAction="always">
+
+        <item android:id="@+id/nav_chats"
+            android:icon="@android:drawable/ic_menu_send"
+            android:title="Contacts"
+            app:showAsAction="never"/>
+
+        <item android:id="@+id/nav_new_contact"
+            android:icon="@android:drawable/ic_menu_send"
+            android:title="Add Contact"
+            app:showAsAction="never"/>
+
+
+        <item android:id="@+id/nav_newkey"
+            android:icon="@android:drawable/ic_secure"
+            android:title="Revoke Key"
+            app:showAsAction="never"/>
+
+        <item android:id="@+id/nav_logout"
+            android:icon="@android:drawable/ic_secure"
+            android:title="Logout"
+            app:showAsAction="never"/>
+
+        <item android:id="@+id/nav_deleteacc"
+            android:icon="@android:drawable/ic_secure"
+            android:title="Delete Account"
+            app:showAsAction="never"/>
+
+    </item>
+</menu>

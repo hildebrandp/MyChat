@@ -39,6 +39,7 @@ public class RSA {
                 RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(KEY_SIZE, RSAKeyGenParameterSpec.F4);
                 KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "SC");
                 generator.initialize(spec, random);
+
             return generator.generateKeyPair();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -51,6 +52,7 @@ public class RSA {
                 //Verschlüssel die byte´s mit "RSA/ECB/OAEPWithSHA1AndMGF1Padding" Algorithmus
                 Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
                 rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
+
             return rsaCipher.doFinal(toBeCiphred);
         } catch (Exception e) {
             //Text konnte nicht verschlüsselt werden
@@ -61,7 +63,9 @@ public class RSA {
 
     //Verschlüsselungs Funktion
     public static String encryptToBase64(Key publicKey, String toBeCiphred) {
-        byte[] cyphredText = RSA.encrypt(publicKey, toBeCiphred.getBytes());
+
+            byte[] cyphredText = RSA.encrypt(publicKey, toBeCiphred.getBytes());
+
         return Base64.encodeToString(cyphredText, Base64.DEFAULT);
     }
 
@@ -71,6 +75,7 @@ public class RSA {
                 //Entschlüssel die byte´s mit "RSA/ECB/OAEPWithSHA1AndMGF1Padding" Algorithmus
                 Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
                 rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
+
             return rsaCipher.doFinal(encryptedText);
         } catch (Exception e) {
             //Text konnte nicht entschlüsselt werden
@@ -81,7 +86,8 @@ public class RSA {
 
     //Entschlüsselungs Funktion
     public static String decryptFromBase64(Key key, String cyphredText) {
-        byte[] afterDecrypting = RSA.decrypt(key, Base64.decode(cyphredText, Base64.DEFAULT));
+            byte[] afterDecrypting = RSA.decrypt(key, Base64.decode(cyphredText, Base64.DEFAULT));
+
         return stringify(afterDecrypting);
     }
 
@@ -90,6 +96,7 @@ public class RSA {
         try {
                 //Übergebenen String mit Public Key zu PublicKey Element konvertieren
                 PublicKey apiPublicKey = Crypto.getRSAPublicKeyFromString(key);
+
             //Text Verschlüsseln
             return encryptToBase64(apiPublicKey, text);
         } catch (Exception e) {
@@ -99,8 +106,10 @@ public class RSA {
 
     //Text mit eigenem Public Key Verschlüsseln
     public static String encryptWithStoredKey(String text) {
-        //Key aus Shared Preferences holen und dann Text Verschlüsseln
-        String strippedKey = Main_activity.user.getString("RSA_PUBLIC_KEY", null);
+
+            //Key aus Shared Preferences holen und dann Text Verschlüsseln
+            String strippedKey = Main_activity.user.getString("RSA_PUBLIC_KEY", null);
+
         return encryptWithKey(strippedKey, text);
     }
 
@@ -122,6 +131,8 @@ public class RSA {
             return decryptFromBase64(privateKey, text);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }finally {
+            decryptedKey = Crypto.random();
         }
     }
 

@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -28,6 +29,7 @@ import android.text.Layout;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -62,8 +64,7 @@ import items.contactItem;
 import items.contactListViewAdapter;
 
 
-public class Main_activity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener{
+public class Main_activity extends AppCompatActivity {
 
     //Felder für die SharedPreferences
     public static SharedPreferences user;
@@ -132,7 +133,7 @@ public class Main_activity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.content_main);
 
         //Zeige Activity ohne Tastatur
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
@@ -143,6 +144,9 @@ public class Main_activity extends AppCompatActivity
         //Öffne die Shared Preferences
         user = getSharedPreferences("myapplab.securechat", MODE_PRIVATE);
         editor = user.edit();
+
+        //Titel setzten mit eignem Nutzernamen
+        getSupportActionBar().setTitle(user.getString("USER_NAME", "My Chat"));
 
         //Speichere das Nutzer Passwort ab
         userpassword = getIntent().getExtras().getString("userpassword");
@@ -158,24 +162,9 @@ public class Main_activity extends AppCompatActivity
         datasourceChat.open();
 
         //Textfelder initialisieren
-        showusername = (TextView)findViewById(R.id.txtshowusername);
         chatListView = (ListView)findViewById(R.id.userchatlist);
         searchuser = (EditText)findViewById(R.id.searchuser);
         searchuser.setMaxLines(1);
-
-        //Toolbar initialisieren
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        //Drawer Layout initialisieren
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
 
         //Dem Textfeld einen TextChangedListener zuweisen, der direkt wenn dort etwas eingegeben
         //wurde in der Datenbank für die Kontakte sucht ob ein Kontakt mit dem eigegebenen Namen existiert
@@ -291,7 +280,7 @@ public class Main_activity extends AppCompatActivity
         builder.setMessage("Delete User: " + userName.get(pos));
 
         //Erstelle OK Button zum löschen
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Contact", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
@@ -303,15 +292,16 @@ public class Main_activity extends AppCompatActivity
             }
         });
         //Erstelle Button Cancel um das löschen abzubrechen
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Messages", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
+                Main_activity.datasourceChat.deleteEntry("" + userID.get(pos));
+                Main_activity.datasourceChat.createChatEntry(userID.get(pos),
+                        Main_activity.user.getString("USER_ID", "0"), ""+userID.get(pos), "Add User", "true", "0", "true", "", "");
             }
         });
 
         builder.show();
-
 
     }
 
@@ -474,12 +464,6 @@ public class Main_activity extends AppCompatActivity
         this.doubleBackToExitPressedOnce = true;
         Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
 
-        //Wenn Drawer offen ist schließe diesen
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        }
-
         //Starte Timer, der nach 2 Sekunden das Feld wieder auf false setzt
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -487,31 +471,6 @@ public class Main_activity extends AppCompatActivity
                 doubleBackToExitPressedOnce = false;
             }
         }, 2000);
-    }
-
-    //Methode die überprüft welches Element des Drawers angeklickt wurde
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.nav_new_cotact) {
-            //Öffne Methode um nach Kontakt zu suchen
-            searchforuser();
-        } else if (id == R.id.nav_newkey) {
-            //Öffne Maethode um neuen Key zu Generieren
-            revokekey();
-        } else if (id == R.id.nav_logout) {
-            //Öffne Methode um sich auszuloggen
-            logout();
-        }else if (id == R.id.nav_deleteacc) {
-            //Öffne Methode um den Account zu löschen
-            deleteAccount();
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 
     //Methode um seinen Key zu ändern, aber damit dieser geändert werden kann muss der
@@ -689,7 +648,7 @@ public class Main_activity extends AppCompatActivity
     protected void onResume() {
 
         //Zeige den Nutzernamen im Drawer Layout an
-        showusername.setText(user.getString("USER_NAME", "Error loading Data"));
+        //showusername.setText(user.getString("USER_NAME", "Error loading Data"));
 
         //Überprüfe ob der Background Service läuft, wenn ja stoppe ihn
         if(isMyServiceRunning(Background_Service.class.getName())){
@@ -729,7 +688,7 @@ public class Main_activity extends AppCompatActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        userpassword = "";
+        userpassword = "0000000000000000000000000000000000";
     }
 
     //Methode die Prüft ob der Background Service läuft
@@ -767,8 +726,39 @@ public class Main_activity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        //Öffne das Menü
-        getMenuInflater().inflate(R.menu.main, menu);
+
+        MenuInflater men = getMenuInflater();
+        men.inflate(R.menu.settings_menu, menu);
+
+        MenuItem menuItemChat = menu.findItem(R.id.nav_chats);
+
+        //Logineintrag passend setzten
+        menuItemChat.setEnabled(false).setVisible(false);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.nav_chats) {
+
+            finish();
+        } else if (id == R.id.nav_new_contact) {
+
+            searchforuser();
+        } else if (id == R.id.nav_newkey) {
+
+            revokekey();
+        } else if (id == R.id.nav_logout) {
+
+            logout();
+        }else if (id == R.id.nav_deleteacc) {
+
+            deleteAccount();
+        }
+
         return true;
     }
 

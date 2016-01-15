@@ -97,7 +97,8 @@ public class Login_activity extends AppCompatActivity {
                 if(checkinput()){
                     try {
                         //Starte Asynchonen Task und übergebe den Inhalt der Felder. Das Passwort wird vorher noch gehashed
-                        new acclogin().execute(username.getText().toString(), Crypto.hashpassword(password.getText().toString(), username.getText().toString()));
+                        new acclogin().execute(username.getText().toString(),
+                                Crypto.hashpassword(password.getText().toString(), username.getText().toString()));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
