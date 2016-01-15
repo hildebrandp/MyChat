@@ -59,9 +59,9 @@
             android:layout_height="wrap_content"
             android:text="Create Account"
             android:id="@+id/btncreateaccount"
+            android:layout_marginTop="10dp"
             android:layout_below="@+id/newPassword2"
             android:layout_alignRight="@+id/newPassword2"
-            android:layout_alignEnd="@+id/newPassword2"
-            android:layout_marginTop="67dp" />
+            android:layout_alignEnd="@+id/newPassword2" />
     </RelativeLayout>
 </LinearLayout>

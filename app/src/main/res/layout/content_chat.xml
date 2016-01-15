@@ -5,45 +5,43 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     android:background="@drawable/chatbackgroundcolor"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    android:fitsSystemWindows="true"
     tools:context=".Chat_activity"
     tools:showIn="@layout/app_bar_chat">
 
+        <!-- Button um den eigegebenen Text zu Senden -->
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:text="  Send  "
+            android:id="@+id/btnsend"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"/>
 
-    <!-- Button um den eigegebenen Text zu Senden -->
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:text="  Send  "
-        android:id="@+id/btnsend"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"/>
+        <!-- TextView für den Text den man senden will -->
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:id="@+id/texttosend"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_toLeftOf="@+id/btnsend"
+            android:layout_toStartOf="@+id/btnsend" />
 
-    <!-- TextView für den Text den man senden will -->
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:id="@+id/texttosend"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_toLeftOf="@+id/btnsend"
-        android:layout_toStartOf="@+id/btnsend"/>
-
-    <!-- ListView um die Nachrichten anzuzeigen -->
-    <ListView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/chatlistView"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_above="@+id/btnsend"
-        android:transcriptMode="alwaysScroll"
-        android:stackFromBottom="true"/>
-
+        <!-- ListView um die Nachrichten anzuzeigen -->
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/chatlistView"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_above="@+id/btnsend"
+            android:transcriptMode="alwaysScroll"
+            android:stackFromBottom="true"/>
 
 </RelativeLayout>

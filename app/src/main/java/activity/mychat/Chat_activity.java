@@ -9,11 +9,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -25,10 +27,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -79,7 +86,6 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private ListView chatlist;
     private EditText texttosend;
     private Button btnsend;
-    private ListView chatListView;
 
     private String resp;
     private Long userid;
@@ -89,6 +95,9 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     private NotificationManager mNotificationManager;
     //Datenbank Objekt
     public static SQLiteDatabase newDB;
+
+    //Boolean Feld zum überprüfen wie oft man auf den Zurück Button drückt
+    private boolean doubleBackToExitPressedOnce = false;
 
     //Broadcast um das ListView zu Aktualisieren wenn Nachricht an diesen Emfänger empfangen wurde
     private BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -111,22 +120,23 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
+        //Initialisiere Notification Manager
         mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
 
         chatlist = (ListView)findViewById(R.id.chatlistView);
         texttosend = (EditText)findViewById(R.id.texttosend);
         btnsend = (Button)findViewById(R.id.btnsend);
-        chatListView = (ListView)findViewById(R.id.chatlistView);
 
+        //Speichere die übergebenen Werte in Variablen
         userid = getIntent().getExtras().getLong("userid");
         username = getIntent().getExtras().getString("username");
 
+        //Öffne Datenbank
         SQLiteHelper dbHelper = new SQLiteHelper(this);
         newDB = dbHelper.getWritableDatabase();
 
-        //Objekt für die Tollbar
+        //Objekt für die Tollbar, in die der Name des Emfängers kommt
         Toolbar toolbar1 = (Toolbar) findViewById(R.id.toolbar1);
         setSupportActionBar(toolbar1);
         getSupportActionBar().setTitle(username);
@@ -175,6 +185,38 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         displayResultList();
     }
 
+    //Methode die aufgerufen wird wenn die Zurücktaste gedrückt wurde
+    //Methode muss zweimal innerhalb von 2 Sekunden aufgerufen werden, damit Activity geschlossen wird
+    @Override
+    public void onBackPressed() {
+        //Überprüfe ob Methode schonmal aufgerufen wurde, wenn ja dann schließe die Activity
+        if (doubleBackToExitPressedOnce) {
+            //App wird geschlossen
+            //Datenbank schließen
+            newDB.close();
+            super.onBackPressed();
+            return;
+        }
+
+        //Setze Feld auf true und zeige Toast an, dass man die Taste nochmal drücken muss um die Activity zu schließen
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+
+        //Wenn Drawer offen ist schließe diesen
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        }
+
+        //Starte Timer, der nach 2 Sekunden das Feld wieder auf false setzt
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce = false;
+            }
+        }, 2000);
+    }
+
     //Methode die prüft ob der Service am laufen ist
     private boolean isMyServiceRunning(String className) {
         ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
@@ -191,7 +233,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         try {
 
             //Alle Daten in den Array löschen
-            chatListView.removeAllViewsInLayout();
+            chatlist.removeAllViewsInLayout();
             chatMessage.clear();
             chatVerified.clear();
             chatDate.clear();
@@ -246,7 +288,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
         } finally {
 
             try {
-                chatListView.removeAllViewsInLayout();
+                chatlist.removeAllViewsInLayout();
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -299,7 +341,7 @@ public class Chat_activity extends AppCompatActivity implements NavigationView.O
 
         //Speichere die Message Items in einem ListView
         mAdapter = new MessagesListAdapter(this, messageItems);
-        chatListView.setAdapter(mAdapter);
+        chatlist.setAdapter(mAdapter);
     }
 
     //Methode zum Überprüfen der Signatur der Nachricht

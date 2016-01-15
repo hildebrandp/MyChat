@@ -45,8 +45,8 @@
         android:clickable="true"
         android:layout_marginTop="10dp"
         android:layout_below="@+id/loginpassword"
-        android:layout_alignRight="@+id/loginpassword"
-        android:layout_alignEnd="@+id/loginpassword"/>
+        android:layout_alignLeft="@+id/loginpassword"
+        android:layout_alignStart="@+id/loginpassword" />
 
     <!-- Button zum einloggen -->
     <Button
@@ -54,7 +54,7 @@
         android:layout_height="wrap_content"
         android:text="Login"
         android:id="@+id/btnlogin"
-        android:layout_below="@+id/txtlogout"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp" />
+        android:layout_below="@+id/loginpassword"
+        android:layout_alignRight="@+id/loginpassword"
+        android:layout_alignEnd="@+id/loginpassword" />
 </RelativeLayout>
