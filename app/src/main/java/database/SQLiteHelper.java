@@ -10,6 +10,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     //String Textfelder mit dem Tabellennamen und den Namen der Spalter für die Tabelle Chat
     public static final String TABLE_CHAT = "chatlist";
+    public static final String COLUMN_CHAT_UNIQUE_ID = "CHAT_UNIQUE_ID";
     public static final String COLUMN_CHAT_ID = "CHAT_ID";
     public static final String COLUMN_CHAT_SENDER_ID = "CHAT_SENDER_ID";
     public static final String COLUMN_CHAT_RECIEVER_ID = "CHAT_RECIEVER_ID";
@@ -32,7 +33,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     //String mit Befehl um Tabelle Chat zu erstellen
     private static final String DATABASE_CREATE_CHAT = "create table "
-            + TABLE_CHAT + " ( " +  COLUMN_CHAT_ID
+            + TABLE_CHAT + " ( " +  COLUMN_CHAT_UNIQUE_ID
+            + " integer primary key autoincrement, " + COLUMN_CHAT_ID
             + " integer      , " + COLUMN_CHAT_SENDER_ID
             + " text not null, " + COLUMN_CHAT_RECIEVER_ID
             + " text not null, " + COLUMN_CHAT_MESSAGE
@@ -70,13 +72,13 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     //Methode um Tabelle User zu löschen und neu zu erstellen
     public static void cleanTableUser(SQLiteDatabase database){
-        database.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
+        database.execSQL("DROP TABLE " + TABLE_USER);
         database.execSQL(DATABASE_CREATE_USER);
     }
 
     //Methode um Tabelle Chat zu löschen und neu zu erstellen
     public static void cleanTableChat(SQLiteDatabase database){
-        database.execSQL("DROP TABLE IF EXISTS " + TABLE_CHAT);
+        database.execSQL("DROP TABLE " + TABLE_CHAT);
         database.execSQL(DATABASE_CREATE_CHAT);
     }
 

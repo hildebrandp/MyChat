@@ -533,7 +533,7 @@ public class Main_activity extends AppCompatActivity {
             }
         });
 
-        msgBox.setCancelable(false);
+        msgBox.setCancelable(true);
         AlertDialog alertDialog = msgBox.create();
         alertDialog.show();
     }
@@ -1069,13 +1069,10 @@ public class Main_activity extends AppCompatActivity {
                             createnewkey();
 
                         }else if(!publickeyphone.equals(publickeyserver)){
-                            
-                            if(publickeyserver.equals("-")){
 
                                 //Public Key wurde geändert, daher abfrage nach Revoke Key bevor ein neuer Public Key generiert werden kann
                                 differentkey();
 
-                            }
                         }
 
                     }else {

@@ -10,12 +10,12 @@ import java.security.SignatureException;
 import activity.mychat.Main_activity;
 
 //Klasse um eine Signatur von einer Nachricht zu erstellen
-public class SignatureUtils {
+public class SignatureClass {
 
     //Signatur Instanz erstellen "SHA512withRSA" Algorithmus
     private static Signature getInstance() {
         try {
-            Signature s = Signature.getInstance("SHA512withRSA", new BouncyCastleProvider());
+            Signature s = Signature.getInstance("SHA512withRSA");
             return s;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
@@ -31,7 +31,7 @@ public class SignatureUtils {
             //Lade Private Key aus Shared Preferences und entschlüssel diesen
             //übergebe Private Key an Signatur Element
             //
-            s.initSign(Crypto.getRSAPrivateKeyFromString(AESHelper.decrypt(
+            s.initSign(Crypto.getRSAPrivateKeyFromString(AES.decrypt(
                     Main_activity.userpassword, Main_activity.user.getString("RSA_PRIVATE_KEY", null))));
 
             //Update Signatur Element

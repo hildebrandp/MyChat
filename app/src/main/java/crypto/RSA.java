@@ -37,7 +37,7 @@ public class RSA {
         try {
                 SecureRandom random = new SecureRandom();
                 RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(KEY_SIZE, RSAKeyGenParameterSpec.F4);
-                KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "SC");
+                KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
                 generator.initialize(spec, random);
 
             return generator.generateKeyPair();
@@ -50,7 +50,7 @@ public class RSA {
     public static byte[] encrypt(Key publicKey, byte[] toBeCiphred) {
         try {
                 //Verschlüssel die byte´s mit "RSA/ECB/OAEPWithSHA1AndMGF1Padding" Algorithmus
-                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
+                Cipher rsaCipher = Cipher.getInstance("RSA");
                 rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
             return rsaCipher.doFinal(toBeCiphred);
@@ -73,7 +73,7 @@ public class RSA {
     public static byte[] decrypt(Key privateKey, byte[] encryptedText) {
         try {
                 //Entschlüssel die byte´s mit "RSA/ECB/OAEPWithSHA1AndMGF1Padding" Algorithmus
-                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "SC");
+                Cipher rsaCipher = Cipher.getInstance("RSA");
                 rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
 
             return rsaCipher.doFinal(encryptedText);
@@ -119,7 +119,7 @@ public class RSA {
 
             try {
                 //Private Key aus Shared Preferences laden und mit AES entschlüsseln
-                decryptedKey = AESHelper.decrypt(Main_activity.userpassword, Main_activity.user.getString("RSA_PRIVATE_KEY", null));
+                decryptedKey = AES.decrypt(Main_activity.userpassword, Main_activity.user.getString("RSA_PRIVATE_KEY", null));
             } catch (Exception e) {
                 e.printStackTrace();
             }

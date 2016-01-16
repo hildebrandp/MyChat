@@ -71,7 +71,7 @@ public class Crypto {
             try {
                 //Entferne den Header des Private Key´s
                 //und der Key wird mit dem AES Algorithmus verschlüsselt
-                encryptedKey = AESHelper.encrypt(Main_activity.userpassword, stripPrivateKeyHeaders(privateStringWriter.toString()));
+                encryptedKey = AES.encrypt(Main_activity.userpassword, stripPrivateKeyHeaders(privateStringWriter.toString()));
                 privateStringWriter = null;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -90,7 +90,7 @@ public class Crypto {
     //Methode mit der aus dem String der Public Key erstellt wird und als Key Element zurückgegeben wird
     public static PublicKey getRSAPublicKeyFromString(String publicKeyPEM) throws Exception {
             //Erstelle KeyFactory mit der "RSA" Instanz und dem "SC" Provider
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA", "SC");
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             byte[] publicKeyBytes = Base64.decode(publicKeyPEM.getBytes("UTF-8"));
             X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(publicKeyBytes);
         return keyFactory.generatePublic(x509KeySpec);
@@ -99,7 +99,7 @@ public class Crypto {
     //Methode mit der aus dem String der Private Key erstellt wird und als Key Element zurückgegeben wird
     public static PrivateKey getRSAPrivateKeyFromString(String privateKeyPEM) throws Exception {
             //Erstelle KeyFactory mit der "RSA" Instanz und dem "SC" Provider
-            KeyFactory fact = KeyFactory.getInstance("RSA", "SC");
+            KeyFactory fact = KeyFactory.getInstance("RSA");
             byte[] clear = Base64.decode(privateKeyPEM);
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
             PrivateKey priv = fact.generatePrivate(keySpec);

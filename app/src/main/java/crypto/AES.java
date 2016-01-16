@@ -8,7 +8,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 //Klasse um Text mit AES zu Verschlüsseön oder zu Entschlüsseln
-public class AESHelper {
+public class AES {
 
     //Hex Zeichen zum Konvertieren
     private final static String HEX = "0123456789ABCDEF";

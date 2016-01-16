@@ -3,6 +3,7 @@ package database;
 
 //Klasse die ein Element aus der Datenbank für die Tabelle Chat dargestellt
 public class chatDbEntry {
+    private long uniqueID;
     private long id;
     private String CHAT_SENDER_ID;
     private String CHAT_RECIEVER_ID;
@@ -12,6 +13,14 @@ public class chatDbEntry {
     private String CHAT_ISSEND;
     private String CHAT_AESKEY;
     private String CHAT_SIGNATURE;
+
+    public long getuniqueID() {
+        return uniqueID;
+    }
+
+    public void setuniqueID(long uniqueID) {
+        this.uniqueID = uniqueID;
+    }
 
     public long getId() {
         return id;

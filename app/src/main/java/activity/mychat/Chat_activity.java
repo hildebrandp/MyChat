@@ -15,7 +15,6 @@ import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
@@ -44,10 +43,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import crypto.AESHelper;
+import crypto.AES;
 import crypto.Crypto;
 import crypto.RSA;
-import crypto.SignatureUtils;
+import crypto.SignatureClass;
 import database.SQLiteHelper;
 import items.Message;
 import items.MessagesListAdapter;
@@ -216,7 +215,7 @@ public class Chat_activity extends AppCompatActivity {
             String selectSearch = "SELECT * " +
                     "FROM chatlist " +
                     "WHERE CHAT_ID = ? " +
-                    "ORDER BY CHAT_DATE ASC";
+                    "ORDER BY CHAT_UNIQUE_ID ASC";
 
             Cursor c = Main_activity.newDB.rawQuery(selectSearch, data);
 
@@ -330,7 +329,7 @@ public class Chat_activity extends AppCompatActivity {
                 }
 
             //Überprüfe ob die Signatur der Nachricht Korrekt ist
-            return SignatureUtils.checkSignature(signature, encmessage, pubkey);
+            return SignatureClass.checkSignature(signature, encmessage, pubkey);
         }else{
 
             return false;
@@ -346,7 +345,7 @@ public class Chat_activity extends AppCompatActivity {
 
             try {
                 //Entschlüssel die Nachricht mit dem AES Schlüssel
-                decryptedMessage = AESHelper.decrypt(decryptedKey, message);
+                decryptedMessage = AES.decrypt(decryptedKey, message);
 
             }catch (Exception e){
                 e.printStackTrace();
@@ -374,7 +373,7 @@ public class Chat_activity extends AppCompatActivity {
 
                 try {
                     //Verschlüssele die Nachricht mit AES und der vorher erstellten Seed
-                    encryptedmessage = AESHelper.encrypt(rand, message);
+                    encryptedmessage = AES.encrypt(rand, message);
                 }catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -385,7 +384,7 @@ public class Chat_activity extends AppCompatActivity {
             privateencrypt = RSA.encryptWithStoredKey(rand);
 
             //Erstelle eine Signatur der Nachricht mit dem eignen RSA Schlüssel
-            String signature = SignatureUtils.genSignature(encryptedmessage);
+            String signature = SignatureClass.genSignature(encryptedmessage);
 
             //Sende Nachricht an den Server
             new sendMessage().execute(encryptedmessage, currentDateandTime, encryptedkey, signature);

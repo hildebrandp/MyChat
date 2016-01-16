@@ -34,6 +34,8 @@ import java.util.List;
 
 import crypto.Crypto;
 import database.SQLiteHelper;
+import database.chatEntryDataSource;
+import database.userEntryDataSource;
 
 //Klasse die als erstes aufgerufen wird um sich bei der App einzuloggen
 //Die Klasse überprüft die eingegebenen Daten mit denen auf dem Server
@@ -279,13 +281,13 @@ public class Login_activity extends AppCompatActivity {
 
                         //Überprüfe ob der eingeloggte Benutzer mit dem letzten angemeldeten Nutzer übereinstimmt
                         //wenn neuer Nutzer lösche die Daten des alten Nutzers
-                        if(!user.getString("USER_ID", "").equals(splitResult[1])){
+                        if(!user.getString("USER_NAME", "").equals(splitResult[2])){
 
                             editor.clear();
                             editor.commit();
 
-                            Main_activity.datasourceChat.deleteAllEntries();
-                            Main_activity.datasourceUser.deleteAllEntries();
+                            SQLiteHelper.cleanTableChat(newDB);
+                            SQLiteHelper.cleanTableUser(newDB);
 
                         }
 

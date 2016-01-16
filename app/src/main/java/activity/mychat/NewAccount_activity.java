@@ -53,7 +53,7 @@ public class NewAccount_activity extends AppCompatActivity{
     //Zeichen die erlaubt sind für das Passwort
     private String characters_pw = "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM1234567890";
     //Zeichen die erlaubt sind für den Nutzernamen
-    private String characters_un = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-+._ ";
+    private String characters_un = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-+._ ";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -301,6 +301,18 @@ public class NewAccount_activity extends AppCompatActivity{
                         createAccount.setClickable(true);
 
                     }else if(splitResult[0].equals("insert_success")){
+
+                        //Überprüfe ob der eingeloggte Benutzer mit dem letzten angemeldeten Nutzer übereinstimmt
+                        //wenn neuer Nutzer lösche die Daten des alten Nutzers
+                        if(!Login_activity.user.getString("USER_NAME", "").equals(newUsername.getText().toString())){
+
+                            Login_activity.editor.clear();
+                            Login_activity.editor.commit();
+
+                            SQLiteHelper.cleanTableChat(Login_activity.newDB);
+                            SQLiteHelper.cleanTableUser(Login_activity.newDB);
+
+                        }
 
                         //Erstellung des Accounts erfolgreich
                         //Daten in den Shared Preferences Speichern

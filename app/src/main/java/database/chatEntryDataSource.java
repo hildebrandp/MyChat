@@ -19,7 +19,7 @@ public class chatEntryDataSource {
     private SQLiteHelper chatdbHelper;
 
     //String in dem alle Felder der Tabelle Chat gespeichert sind
-    private String[] allColumnsChat = {SQLiteHelper.COLUMN_CHAT_ID,
+    private String[] allColumnsChat = {SQLiteHelper.COLUMN_CHAT_UNIQUE_ID,SQLiteHelper.COLUMN_CHAT_ID,
             SQLiteHelper.COLUMN_CHAT_SENDER_ID, SQLiteHelper.COLUMN_CHAT_RECIEVER_ID, SQLiteHelper.COLUMN_CHAT_MESSAGE,
             SQLiteHelper.COLUMN_CHAT_READ, SQLiteHelper.COLUMN_CHAT_DATE, SQLiteHelper.COLUMN_CHAT_ISSEND, SQLiteHelper.COLUMN_CHAT_AESKEY, SQLiteHelper.COLUMN_CHAT_SIGNATURE};
 
@@ -53,8 +53,9 @@ public class chatEntryDataSource {
         values.put(SQLiteHelper.COLUMN_CHAT_SIGNATURE, CHAT_SIGNATURE);
 
         //Füge die Daten in die Tabelle Chat ein
-        chatdatabase.insert(SQLiteHelper.TABLE_CHAT, null, values);
-        Cursor cursor = chatdatabase.query(SQLiteHelper.TABLE_CHAT, allColumnsChat, null, null, null, null, null, null);
+        long insertId = chatdatabase.insert(SQLiteHelper.TABLE_CHAT, null, values);
+        Cursor cursor = chatdatabase.query(SQLiteHelper.TABLE_CHAT, allColumnsChat,
+                SQLiteHelper.COLUMN_CHAT_UNIQUE_ID + " = " + insertId, null, null, null, null, null);
         cursor.moveToFirst();
         chatDbEntry newDbEntry = cursorToEntry(cursor);
         cursor.close();
@@ -74,15 +75,16 @@ public class chatEntryDataSource {
     //Methode um ein Element aus der Datenbank zu öffnen auf dem der Cursor steht, der übergeben wird
     private chatDbEntry cursorToEntry(Cursor cursor) {
         chatDbEntry entry = new chatDbEntry();
-        entry.setId(cursor.getLong(0));
-        entry.setCHAT_SENDER_ID(cursor.getString(1));
-        entry.setCHAT_RECIEVER_ID(cursor.getString(2));
-        entry.setCHAT_MESSAGE(cursor.getString(3));
-        entry.setCHAT_READ(cursor.getString(4));
-        entry.setCHAT_DATE(cursor.getString(5));
-        entry.setCHAT_ISSEND(cursor.getString(6));
-        entry.setCHAT_AESKEY(cursor.getString(7));
-        entry.setCHAT_SIGNATURE(cursor.getString(8));
+        entry.setuniqueID(cursor.getLong(0));
+        entry.setId(cursor.getLong(1));
+        entry.setCHAT_SENDER_ID(cursor.getString(2));
+        entry.setCHAT_RECIEVER_ID(cursor.getString(3));
+        entry.setCHAT_MESSAGE(cursor.getString(4));
+        entry.setCHAT_READ(cursor.getString(5));
+        entry.setCHAT_DATE(cursor.getString(6));
+        entry.setCHAT_ISSEND(cursor.getString(7));
+        entry.setCHAT_AESKEY(cursor.getString(8));
+        entry.setCHAT_SIGNATURE(cursor.getString(9));
         return entry;
     }
 }
